@@ -506,3 +506,62 @@ body {
     padding: 0.35em 0.65em;
   }
 }
+
+/* Notification Styles */
+.notification-dropdown .dropdown-menu {
+    width: 350px;
+    padding: 0;
+    border: 0;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.notification-header {
+    background-color: #f8f9fa;
+}
+
+.notification-body .dropdown-item {
+    white-space: normal;
+    padding: 0.75rem 1rem;
+}
+
+.notification-body .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-body .dropdown-item:active {
+    background-color: #e9ecef;
+    color: inherit;
+}
+
+.notification-icon {
+    font-size: 1.25rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-content {
+    min-width: 0;
+}
+
+.notification-content h6 {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.notification-content p {
+    font-size: 0.8125rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.notification-footer .btn-link {
+    color: #6c757d;
+}
+
+.notification-footer .btn-link:hover {
+    color: #495057;
+}

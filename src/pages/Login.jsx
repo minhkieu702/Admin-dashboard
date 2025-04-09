@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { getMessaging, getToken } from "firebase/messaging";
+import { initializeApp } from "firebase/app";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import axiosInstance from '../services/axiosConfig';
 
 const Login = () => {
   const navigate = useNavigate();
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtAbV6sMft_doFAjrLp774VZWhEavz6MQ",
+    authDomain: "fir-realtime-database-49344.firebaseapp.com",
+    projectId: "fir-realtime-database-49344",
+    storageBucket: "fir-realtime-database-49344.appspot.com",
+    messagingSenderId: "423913316379",
+    appId: "1:423913316379:web:201871eb6ae9dd2a0198be"
+  };
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -22,11 +34,65 @@ const Login = () => {
     } 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    // } else if (formData.password.length < 6) {
+    //   newErrors.password = 'Password must be at least 6 characters';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  useEffect(() => {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/firebase-messaging-sw.js")
+        .then((registration) => {
+          console.log("Service Worker registered with scope:", registration.scope);
+        })
+        .catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
+    }
+  }, []);
+
+  const requestNotificationPermission = async (accessToken) => {
+    try {
+      const status = await Notification.requestPermission();
+      if (status === "granted") {
+        const deviceToken = await getToken(messaging, {
+          vapidKey: "BIUfDNHZV3QQtZE9wYFA7n8vJLvQzVQJm9JNTRbLqBT8t7saxVmeEB2rA7oMimn04xeB6LvHKvYLoQsv5nqar4o"
+        });
+
+        if (deviceToken) {
+          console.log("Device Token:", deviceToken);
+          await registerDeviceToken(deviceToken, accessToken);
+        } else {
+          console.error("Không có token thiết bị nào được tạo.");
+        }
+      } else {
+        console.error("Quyền thông báo bị từ chối.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi yêu cầu quyền thông báo:", error);
+    }
+  };
+
+  const registerDeviceToken = async (deviceToken, accessToken) => {
+    try {
+      localStorage.setItem("deviceToken", deviceToken)
+      const formData = new FormData();
+      formData.append("PlatformType", 1);
+      formData.append("Token", deviceToken);
+
+      await axiosInstance.post(`/api/DeviceToken`, formData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+    } catch (error) {
+      console.error("⚠️ Error registering device token:", error);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -67,7 +133,10 @@ console.log(formData);
     });
       console.log(response);
       const token  = response.accessToken;
-      
+      console.log(token);
+        // Lấy và đăng ký device token
+        await requestNotificationPermission(token);
+
       // Store the token
       localStorage.setItem('token', token);
       

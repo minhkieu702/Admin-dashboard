@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, InputGroup, Badge, Modal, Spinner, ListGroup } from 'react-bootstrap';
-import { FaSearch, FaEdit, FaTrash, FaStar, FaCalendarPlus } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 import axiosInstance from '../services/axiosConfig';
+import Pagination from '../components/Pagination';
 
 const Artists = () => {
+  const pageSizeOptions = [8, 16, 24, 32];
   const [artists, setArtists] = useState([]);
   const [services, setServices] = useState([]);
   const [stores, setStores] = useState([]);
@@ -12,7 +14,12 @@ const Artists = () => {
   const [artistStoreForms, setArtistStoreForms] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+  const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const today = new Date();
   
   const [formData, setFormData] = useState({
@@ -30,7 +37,6 @@ const Artists = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   // const decodedToken = jwtDecode(localStorage.getItem("token"));
   // const id = decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]
-console.log("hfiwhifuwiu");
 
   const fetchServices = async () => {
     try {
@@ -50,9 +56,16 @@ console.log("hfiwhifuwiu");
     try {
       const uri = "/odata/store?";
       const filter = `$filter=isDeleted eq false`;
+      const count = `$count=true`;
+      const skip = currentPage * pageSize;
+      const pagination = `&$top=${pageSize}&$skip=${skip}`;
       const selectStore = `&$select=id,province,description,address,imageUrl,latitude,longtitude`;
 
-      const res = await axiosInstance.get(`${uri}${filter}${selectStore}`);
+      const res = await axiosInstance.get(`${uri}${filter}${count}${pagination}${selectStore}`);
+      
+      const totalCount = res["@odata.count"] ?? 0;
+      setTotalPages(Math.ceil(totalCount / pageSize));
+      
       const storesRes = res.value;
       setStores(storesRes);
     } catch (error) {
@@ -86,8 +99,6 @@ console.log("hfiwhifuwiu");
   };
 
   const handleShowModal = async (artist) => {
-    console.log(artist);
-    
     setSelectedArtist(artist ? artist : null);
     const dateOfBirth = artist?.User?.DateOfBirth
         ? new Date(artist?.User?.DateOfBirth).toISOString().split("T")[0]
@@ -104,8 +115,6 @@ console.log("hfiwhifuwiu");
 
     // Add existing artist services to selectedServices
     artist?.ArtistServices?.map(service => {
-        console.log(service.Service.IsDeleted);
-        
         if (service.Service.IsDeleted === false) {
             handleSelectService(service.ServiceId)
         }
@@ -144,20 +153,31 @@ console.log("hfiwhifuwiu");
   const fetchArtist = async () => {
     try {
       const uri = "/odata/artist?";
-      // const filter = `$filter=id eq ${id}`;
-      const selectArtist = `$select=id,username,yearsOfExperience,level,averageRating`;
+      let filterQuery = "";
+      
+      // Add search filter if searchTerm exists
+      if (searchTerm) {
+        filterQuery = `$filter=contains(user/fullName, '${searchTerm}')`;
+      }
+
+      const selectArtist = `${filterQuery ? '&' : ''}$select=id,username,yearsOfExperience,level,averageRating`;
       const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth,isDeleted)`;
       const expandArtistStore = `,artistStores($select=storeId,workingDate,startTime,endTime,breakTime;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
+      const count = `&$count=true`;
+      const skip = currentPage * pageSize;
+      const pagination = `&$top=${pageSize}&$skip=${skip}`;
 
       const res = await axiosInstance.get(
-        `${uri}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}`
+        `${uri}${filterQuery}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}${count}${pagination}`
       );
 
-      const artist = res.value
-      console.log(artist);
+      const totalCountValue = res["@odata.count"] ?? 0;
+      setTotalCount(totalCountValue);
+      setTotalPages(Math.ceil(totalCountValue / pageSize));
       
-      setArtists(artist)
+      const artist = res.value;
+      setArtists(artist);
       
     } catch (error) {
       console.error("Error fetching artist:", error);
@@ -326,25 +346,27 @@ console.log("hfiwhifuwiu");
   };
 
   const handleImageChange = (e) => {
+    const file = e.target.files[0];
     setFormData((prev) => ({
       ...prev,
-      NewImage: e.target.files[0]
+      NewImage: file,
+      ImageUrl: URL.createObjectURL(file)
     }));
   };
 
   const handleSearch = (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const filteredArtists = artists.filter(artist => 
-      artist.User?.FullName?.toLowerCase().includes(searchTerm)
-    );
-    setArtists(filteredArtists);
+    const searchTerm = e.target.value;
+    setSearchTerm(searchTerm);
+    setCurrentPage(0); // Reset to first page when searching
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
   };
 
   useEffect(() => {
-    console.log("some");
-    
     fetchArtist();
-  }, []);
+  }, [currentPage, pageSize, searchTerm]);
   
   return (
     <Container fluid>
@@ -361,11 +383,27 @@ console.log("hfiwhifuwiu");
             <Form.Control
               placeholder="Search artists..."
               aria-label="Search artists"
+              onChange={handleSearch}
             />
             <Button variant="outline-secondary">
               <FaSearch />
             </Button>
           </InputGroup>
+        </Col>
+        <Col md={2}>
+          <Form.Select 
+            value={pageSize} 
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0); // Reset to first page when changing page size
+            }}
+          >
+            {pageSizeOptions.map(size => (
+              <option key={size} value={size}>
+                {size} per page
+              </option>
+            ))}
+          </Form.Select>
         </Col>
       </Row>
 
@@ -424,7 +462,17 @@ console.log("hfiwhifuwiu");
         ))}
       </Row>
 
-      
+      <div className="d-flex justify-content-between align-items-center mt-4">
+        <div className="text-muted">
+          Showing {artists.length} of {totalCount} artists
+        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Sửa thông tin</Modal.Title>

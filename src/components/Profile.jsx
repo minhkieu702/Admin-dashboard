@@ -270,9 +270,11 @@ const Profile = () => {
   };
 
   const handleImageChange = (e) => {
+    const file = e.target.files[0];
     setFormData((prev) => ({
       ...prev,
-      NewImage: e.target.files[0]
+      NewImage: file,
+      ImageUrl: URL.createObjectURL(file)
     }));
   };
 

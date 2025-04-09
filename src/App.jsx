@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet
 } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -17,9 +18,10 @@ import Customers from "./pages/Customers";
 import Designs from "./pages/Designs";
 import Services from "./pages/Services";
 import Login from "./pages/Login";
+import Stores from "./pages/Stores";
 
 // Tạo ProtectedRoute component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = () => {
   const token = localStorage.getItem('token');
   
   // 1. Kiểm tra có token hay không
@@ -42,8 +44,10 @@ const ProtectedRoute = ({ children }) => {
       <div className="admin-container">
         <Sidebar />
         <div className="main-content">
-          {/* <Navbar /> */}
-          <div className="content-wrapper">{children}</div>
+          <Navbar />
+          <div className="content-wrapper">
+            <Outlet/>
+          </div>
         </div>
       </div>
     );
@@ -69,6 +73,7 @@ function App() {
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/stores" element={<Stores />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />

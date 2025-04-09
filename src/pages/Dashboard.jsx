@@ -13,6 +13,9 @@ import {
   Legend,
 } from 'chart.js';
 import Profile from '../components/Profile';
+import { jwtDecode } from 'jwt-decode';
+import { getRole } from '../services/helper';
+import Analytics from '../components/Analytics';
 
 ChartJS.register(
   CategoryScale,
@@ -25,10 +28,18 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
+  console.log(getRole());
   
-  return (
-    <Profile/>
-  );
+  if (getRole() == 1) {
+    return (
+      <Profile/>
+    ); 
+  }
+  if (getRole() == 2) {
+    return(
+      <Analytics/>
+    )
+  }
 };
 
 export default Dashboard; 

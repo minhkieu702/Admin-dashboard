@@ -11,21 +11,23 @@ import {
   FaChartBar,
   FaServicestack,
   FaHandPaper,
+  FaStoreAlt,
 } from "react-icons/fa";
+import { getRole } from "../services/helper";
 
 const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
     { 
-        path: "/", 
+        path: "/dashboard", 
         icon: <FaHome />,
         title: "Dashboard"
     },
     { 
         path: "/customers",
         icon: <FaUsers />, 
-        title: "Users" 
+        title: "Customers" 
     },
     { 
         path: "/designs", 
@@ -47,12 +49,17 @@ const Sidebar = () => {
       icon: <FaServicestack />,
       title: "Services",
     },
+    {
+      path: "/stores",
+      icon: <FaStoreAlt />,
+      title: "Stores",
+    },
     { path: "/settings", icon: <FaCog />, title: "Settings" },
   ];
 
   return (
     <div className="sidebar">
-      <div className="sidebar-brand">INBS Admin</div>
+      <div className="sidebar-brand">{getRole() == 1 ? "Artist Portal" : getRole() == 2 ? "Admin Dashboard" : ""}</div>
       <Nav className="sidebar-menu flex-column">
         {menuItems.map((item) => (
           <Nav.Item key={item.path}>

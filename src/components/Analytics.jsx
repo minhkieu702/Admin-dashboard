@@ -27,6 +27,8 @@ ChartJS.register(
 );
 
 const Analytics = () => {
+  console.log("anail");
+  
   const revenueData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
