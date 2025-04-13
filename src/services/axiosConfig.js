@@ -2,8 +2,8 @@ import axios from "axios";
 
 // Tạo instance axios với cấu hình mặc định
 const axiosInstance = axios.create({
-  // baseURL: "https://inbsapi-d9hhfmhsapgabrcz.southeastasia-01.azurewebsites.net/", // Thay đổi URL này theo API của bạn
-  baseURL: "https://localhost:7012/",
+  baseURL: "https://inbsapi-d9hhfmhsapgabrcz.southeastasia-01.azurewebsites.net/", // Thay đổi URL này theo API của bạn
+  // baseURL: "https://localhost:7012/",
 //   timeout: 10000,
   headers: {
     "Content-Type": "multipart/form-data,application/json"
