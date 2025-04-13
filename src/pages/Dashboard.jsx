@@ -16,6 +16,7 @@ import Profile from '../components/Profile';
 import { jwtDecode } from 'jwt-decode';
 import { getRole } from '../services/helper';
 import Analytics from '../components/Analytics';
+import Bookings from './Bookings';
 
 ChartJS.register(
   CategoryScale,
@@ -37,7 +38,7 @@ const Dashboard = () => {
   }
   if (getRole() == 2) {
     return(
-      <Analytics/>
+      <Bookings/>
     )
   }
 };

@@ -55,7 +55,7 @@ const Artists = () => {
   const fetchStores = async () => {
     try {
       const uri = "/odata/store?";
-      const filter = `$filter=isDeleted eq false`;
+      const filter = `$filter=isDeleted eq false&`;
       const count = `$count=true`;
       const skip = currentPage * pageSize;
       const pagination = `&$top=${pageSize}&$skip=${skip}`;

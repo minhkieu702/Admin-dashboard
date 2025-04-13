@@ -5,6 +5,7 @@ import { getMessaging, getToken } from "firebase/messaging";
 import { initializeApp } from "firebase/app";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import axiosInstance from '../services/axiosConfig';
+import signalRService from '../services/signalR';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -34,8 +35,6 @@ const Login = () => {
     } 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    // } else if (formData.password.length < 6) {
-    //   newErrors.password = 'Password must be at least 6 characters';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -55,31 +54,29 @@ const Login = () => {
     }
   }, []);
 
-  const requestNotificationPermission = async (accessToken) => {
+  const setupNotificationsAndSignalR = async (accessToken) => {
     try {
+      // 1. Request notification permission
       const status = await Notification.requestPermission();
-      if (status === "granted") {
-        const deviceToken = await getToken(messaging, {
-          vapidKey: "BIUfDNHZV3QQtZE9wYFA7n8vJLvQzVQJm9JNTRbLqBT8t7saxVmeEB2rA7oMimn04xeB6LvHKvYLoQsv5nqar4o"
-        });
-
-        if (deviceToken) {
-          console.log("Device Token:", deviceToken);
-          await registerDeviceToken(deviceToken, accessToken);
-        } else {
-          console.error("Không có token thiết bị nào được tạo.");
-        }
-      } else {
-        console.error("Quyền thông báo bị từ chối.");
+      if (status !== "granted") {
+        console.error("Notification permission denied");
+        return;
       }
-    } catch (error) {
-      console.error("Lỗi khi yêu cầu quyền thông báo:", error);
-    }
-  };
 
-  const registerDeviceToken = async (deviceToken, accessToken) => {
-    try {
-      localStorage.setItem("deviceToken", deviceToken)
+      // 2. Get device token
+      const deviceToken = await getToken(messaging, {
+        vapidKey: "BIUfDNHZV3QQtZE9wYFA7n8vJLvQzVQJm9JNTRbLqBT8t7saxVmeEB2rA7oMimn04xeB6LvHKvYLoQsv5nqar4o"
+      });
+
+      if (!deviceToken) {
+        console.error("Failed to generate device token");
+        return;
+      }
+
+      console.log("Device Token:", deviceToken);
+      localStorage.setItem("deviceToken", deviceToken);
+
+      // 3. Register device token with backend
       const formData = new FormData();
       formData.append("PlatformType", 1);
       formData.append("Token", deviceToken);
@@ -90,8 +87,12 @@ const Login = () => {
           "Content-Type": "multipart/form-data"
         }
       });
+
+      // 4. Start SignalR connection
+      await signalRService.startConnection(accessToken);
+
     } catch (error) {
-      console.error("⚠️ Error registering device token:", error);
+      console.error("Error in setup:", error);
     }
   };
 
@@ -101,7 +102,6 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -116,34 +116,34 @@ const Login = () => {
 
     setIsLoading(true);
     setLoginError('');
-console.log(formData);
+    console.log(formData);
 
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) =>{
+    Object.keys(formData).forEach((key) => {
       if (formData[key] !== null) {
         formDataToSend.append(key, formData[key])
       }
-    })
+    });
 
     try {
+      // 1. Login
       const response = await axiosInstance.post('/api/Authentication/staff/login', formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-    });
-      console.log(response);
-      const token  = response.accessToken;
-      console.log(token);
-        // Lấy và đăng ký device token
-        await requestNotificationPermission(token);
+      });
+      
+      const token = response.accessToken;
+      console.log('Login successful, token:', token);
 
-      // Store the token
+      // 2. Store token and update axios headers
       localStorage.setItem('token', token);
-      
-      // Set the token in axios headers
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // Redirect to dashboard
+
+      // 3. Setup notifications and SignalR
+      await setupNotificationsAndSignalR(token);
+
+      // 4. Navigate to dashboard
       navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);

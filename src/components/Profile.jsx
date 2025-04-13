@@ -118,7 +118,7 @@ const Profile = () => {
         if (date > today) {
           const formatTime = (timeString) => {
             if (!timeString) return "";
-            return timeString.split(".")[0].slice(0, 5);
+            return timeString.split(".")[0].slice(0);
           };
           return {
             id: Date.now() + Math.random(),

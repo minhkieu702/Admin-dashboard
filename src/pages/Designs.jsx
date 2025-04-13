@@ -48,7 +48,7 @@ useEffect(() => {
   const fetchOptions = async () => {
     setIsLoading(true);
     try {
-      const [colorsRes, occasionsRes, skintonesRes, paintTypesRes, servicesRes] = await Promise.all([axiosInstance.get("/api/Adjective/Colors"), axiosInstance.get("/api/Adjective/Occasions"), axiosInstance.get("/api/Adjective/Skintone"), axiosInstance.get("/api/Adjective/PaintType"), axiosInstance.get(`/odata/service?$select=id,name,price,imageUrl,description`)]);
+      const [colorsRes, occasionsRes, skintonesRes, paintTypesRes, servicesRes] = await Promise.all([axiosInstance.get("/api/Adjective/Colors"), axiosInstance.get("/api/Adjective/Occasions"), axiosInstance.get("/api/Adjective/Skintone"), axiosInstance.get("/api/Adjective/PaintType"), axiosInstance.get(`/odata/service?$filter= isDeleted eq false&$select=id,name,price,imageUrl,description`)]);
       setColors(colorsRes);
       setOccasions(occasionsRes);
       setSkintones(skintonesRes);
@@ -186,11 +186,11 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(formData.Email)) {
-    alert("Email không hợp lệ");
-    return;
-  }
+  // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // if (!emailRegex.test(formData.Email)) {
+  //   alert("Email không hợp lệ");
+  //   return;
+  // }
 
   setIsSubmitting(true);
   try {

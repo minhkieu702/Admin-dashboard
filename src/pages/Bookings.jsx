@@ -397,7 +397,7 @@ const handlePayment = async (bookingId) => {
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-1">Appointments</h2>
+          <h2 className="mb-1">Bookings</h2>
           <p className="text-muted mb-0">Manage your salon bookings</p>
         </div>
       </div>
@@ -489,7 +489,7 @@ const handlePayment = async (bookingId) => {
                     <div className="d-flex align-items-center">
                       <div>
                         <div className="fw-medium">
-                          {booking.StartTime}
+                          {booking.StartTime.slice(0,5)}
                         </div>
                       </div>
                     </div>
@@ -498,7 +498,7 @@ const handlePayment = async (bookingId) => {
                     <div className="d-flex align-items-center">
                       <div>
                         <div className="fw-medium">
-                          {booking.PredictEndTime}
+                          {booking.PredictEndTime.slice(0,5)}
                         </div>
                       </div>
                     </div>
@@ -600,6 +600,7 @@ const handlePayment = async (bookingId) => {
                             {getSideOfFinger[nailDesignServiceSelected.NailDesignService.NailDesign.IsLeft]}
                           </p>
                         </div>
+                        {console.log( nailDesignServiceSelected.NailDesignService.Status)}
                         <Button 
                           variant={
                             nailDesignServiceSelected.NailDesignService.Status === 0 ? "outline-secondary" :
@@ -621,7 +622,7 @@ const handlePayment = async (bookingId) => {
                 ))}
               </div>
 
-              <div hidden={bookingDetails.Status !== 2 ? true : false}>
+              <div hidden={(bookingDetails.Status !== 2 ? true : false) && !isComplete}>
                 <Card className="border-0 shadow-sm bg-light">
                   <Card.Body>
                     <h6 className="text-uppercase mb-3 text-muted">Payment</h6>
