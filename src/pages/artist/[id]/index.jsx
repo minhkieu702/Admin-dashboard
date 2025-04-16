@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, InputGroup, Badge, Modal, Spinner, ListGroup } from 'react-bootstrap';
-import { FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
-import axiosInstance from '../services/axiosConfig';
-import Pagination from '../components/Pagination';
+import React, { useEffect, useState } from "react";
+import axiosInstance from "@services/axiosConfig";
+import { Modal, Form, ListGroup, Button, Spinner } from "react-bootstrap";
+import { useParams } from "react-router-dom";
+import MyBreadcrumb from "@components/MyBreadcrumb";
 
-const Artists = () => {
-  const pageSizeOptions = [8, 16, 24, 32];
-  const [artists, setArtists] = useState([]);
+const ArtistDetail = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [artist, setArtist] = useState(null);
   const [services, setServices] = useState([]);
   const [stores, setStores] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [artistStoreForms, setArtistStoreForms] = useState([]);
-  const [selectedArtist, setSelectedArtist] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-
+  const {id} = useParams();
   const today = new Date();
   
+  const breadcrumbItems = [
+    { label: 'Artists', path: '/artists' },
+    { label: artist?.User?.FullName || 'Artist Detail', path: `/artists/${id}` }
+  ];
+
   const [formData, setFormData] = useState({
     Level: 1,
     YearsOfExperience: 0,
@@ -35,10 +33,9 @@ const Artists = () => {
     artistStores: [],
   });
   const [selectedServices, setSelectedServices] = useState([]);
-  // const decodedToken = jwtDecode(localStorage.getItem("token"));
-  // const id = decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]
 
   const fetchServices = async () => {
+    setIsLoading(true);
     try {
       const uri = "/odata/service?";
       const filter = `$filter=isDeleted eq false`;
@@ -49,27 +46,25 @@ const Artists = () => {
       setServices(servicesRes);
     } catch (error) {
       console.error("Error fetching services:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchStores = async () => {
+    setIsLoading(true);
     try {
       const uri = "/odata/store?";
-      const filter = `$filter=isDeleted eq false&`;
-      const count = `$count=true`;
-      const skip = currentPage * pageSize;
-      const pagination = `&$top=${pageSize}&$skip=${skip}`;
+      const filter = `$filter=isDeleted eq false`;
       const selectStore = `&$select=id,province,description,address,imageUrl,latitude,longtitude`;
 
-      const res = await axiosInstance.get(`${uri}${filter}${count}${pagination}${selectStore}`);
-      
-      const totalCount = res["@odata.count"] ?? 0;
-      setTotalPages(Math.ceil(totalCount / pageSize));
-      
+      const res = await axiosInstance.get(`${uri}${filter}${selectStore}`);
       const storesRes = res.value;
       setStores(storesRes);
     } catch (error) {
       console.error("Error fetching stores:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -98,23 +93,24 @@ const Artists = () => {
     }));
   };
 
-  const handleShowModal = async (artist) => {
-    setSelectedArtist(artist ? artist : null);
-    const dateOfBirth = artist?.User?.DateOfBirth
-        ? new Date(artist?.User?.DateOfBirth).toISOString().split("T")[0]
+  const handleShowModal = async () => {
+    const dateOfBirth = artist.User?.DateOfBirth
+        ? new Date(artist.User.DateOfBirth).toISOString().split("T")[0]
         : "";
     setFormData({
-        Level: artist?.Level || 1,
-        YearsOfExperience: artist?.YearsOfExperience || 0,
-        FullName: artist?.User?.FullName || "",
-        ImageUrl: artist?.User?.ImageUrl || "",
-        PhoneNumber: artist?.User?.PhoneNumber || "",
-        Email: artist?.User?.Email || "",
+        Level: artist.Level || 1,
+        YearsOfExperience: artist.YearsOfExperience || 0,
+        FullName: artist.User?.FullName || "",
+        ImageUrl: artist.User?.ImageUrl || "",
+        PhoneNumber: artist.User?.PhoneNumber || "",
+        Email: artist.User?.Email || "",
         DateOfBirth: dateOfBirth,
     });
 
     // Add existing artist services to selectedServices
-    artist?.ArtistServices?.map(service => {
+    artist.ArtistServices.map(service => {
+        console.log(service.Service.IsDeleted);
+        
         if (service.Service.IsDeleted === false) {
             handleSelectService(service.ServiceId)
         }
@@ -122,12 +118,12 @@ const Artists = () => {
 
     // Add artist stores to forms if they are within 3 days from now
     
-    const validArtistStores = artist?.ArtistStores?.map(store => {
+    const validArtistStores = artist.ArtistStores.map(store => {
         const date = new Date(store.WorkingDate);
         if (date > today) {
           const formatTime = (timeString) => {
             if (!timeString) return "";
-            return timeString.split(".")[0].slice(0, 5);
+            return timeString.split(".")[0].slice(0);
           };
           return {
             id: Date.now() + Math.random(),
@@ -142,7 +138,7 @@ const Artists = () => {
       }).filter(store => store !== null && store !== undefined); // Lọc bỏ giá trị null/undefined
       
       // Kiểm tra xem có dữ liệu hay không
-      if (validArtistStores && validArtistStores.length > 0) {
+      if (validArtistStores.length > 0) {
             setArtistStoreForms(validArtistStores);
       }
     
@@ -151,36 +147,26 @@ const Artists = () => {
   };
 
   const fetchArtist = async () => {
+    setIsLoading(true);
     try {
       const uri = "/odata/artist?";
-      let filterQuery = "";
-      
-      // Add search filter if searchTerm exists
-      if (searchTerm) {
-        filterQuery = `$filter=contains(user/fullName, '${searchTerm}')`;
-      }
-
-      const selectArtist = `${filterQuery ? '&' : ''}$select=id,username,yearsOfExperience,level,averageRating`;
-      const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth,isDeleted)`;
+      const filter = `$filter=id eq ${id.startsWith(":")}`;
+      const selectArtist = `&$select=id,username,yearsOfExperience,level,averageRating`;
+      const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth)`;
       const expandArtistStore = `,artistStores($select=storeId,workingDate,startTime,endTime,breakTime;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
-      const count = `&$count=true`;
-      const skip = currentPage * pageSize;
-      const pagination = `&$top=${pageSize}&$skip=${skip}`;
 
       const res = await axiosInstance.get(
-        `${uri}${filterQuery}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}${count}${pagination}`
+        `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}`
       );
 
-      const totalCountValue = res["@odata.count"] ?? 0;
-      setTotalCount(totalCountValue);
-      setTotalPages(Math.ceil(totalCountValue / pageSize));
-      
-      const artist = res.value;
-      setArtists(artist);
+      const artist = res.value[0]
+      setArtist(artist)
       
     } catch (error) {
       console.error("Error fetching artist:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -216,61 +202,9 @@ const Artists = () => {
     }
   };
 
-  const handleShowDeleteModal = (artist) => {
-    console.log(artist);
-    
-    setSelectedArtist(artist);
-    setShowDeleteModal(true);
-  };
-
-  const handleCloseDeleteModal = () =>{
-    fetchArtist();
-    setSelectedArtist(false)
-    setShowDeleteModal(false)
-  }
-
-  const deleteArtist = async () => {
-    console.log(selectedArtist.User.IsDeleted);
-    
-    try {
-      await axiosInstance.patch(`/api/Artist?id=${selectedArtist.ID}`, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log("Store updated successfully");
-      handleCloseDeleteModal()
-    } catch (error) {
-      console.error("Error updating store:", error);
-      throw error;
-    }
-  };
-
-  const createArtist = async (formDataToSend) => {
-    try {
-      // Log all values in FormData
-      console.log("FormData contents:");
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-      }
-        
-      await axiosInstance.post(`/api/Artist`, formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log("Store created successfully");
-    } catch (error) {
-      console.error("Error creating store:", error);
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log(artistStoreForms);
-    
     try {
       console.log("Submitting with selectedServices:", selectedServices);
       console.log("Submitting with artistStoreForms:", artistStoreForms);
@@ -296,11 +230,7 @@ const Artists = () => {
 
     //   formDataToSend.append('artistServices', JSON.stringify(selectedServices));
     //   formDataToSend.append('artistStores', JSON.stringify(artistStoreForms));
-      if (selectedArtist && selectedArtist.ID) {
-        await updateArtist(selectedArtist.ID, formDataToSend);
-      } else {
-        await createArtist(formDataToSend);
-      }
+      await updateArtist(artist.ID, formDataToSend);
       await fetchArtist();
       handleCloseModal();
     } catch (error) {
@@ -334,7 +264,6 @@ const Artists = () => {
       artistStores: [],
     });
 
-    setSelectedArtist(null);
     // Reset selectedServices
     setSelectedServices([]);
 
@@ -354,125 +283,168 @@ const Artists = () => {
     }));
   };
 
-  const handleSearch = (e) => {
-    const searchTerm = e.target.value;
-    setSearchTerm(searchTerm);
-    setCurrentPage(0); // Reset to first page when searching
-  };
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-  };
-
   useEffect(() => {
     fetchArtist();
-  }, [currentPage, pageSize, searchTerm]);
-  
-  return (
-    <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Nail Artists Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          Add New Artist
-        </Button>
-      </div>
+  }, []);
 
-      <Row className="mb-4">
-        <Col md={6}>
-          <InputGroup>
-            <Form.Control
-              placeholder="Search artists..."
-              aria-label="Search artists"
-              onChange={handleSearch}
-            />
-            <Button variant="outline-secondary">
-              <FaSearch />
-            </Button>
-          </InputGroup>
-        </Col>
-        <Col md={2}>
-          <Form.Select 
-            value={pageSize} 
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(0); // Reset to first page when changing page size
-            }}
-          >
-            {pageSizeOptions.map(size => (
-              <option key={size} value={size}>
-                {size} per page
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
-      </Row>
-
-      <Row>
-        {artists.map((artist) => (
-          <Col key={artist.ID} lg={3} md={4} sm={6} className="mb-4">
-            <Card className="h-100">
-              <Card.Img variant="top" src={artist.User?.ImageUrl} />
-              <Card.Body>
-                <Card.Title className="d-flex justify-content-between align-items-center">
-                  {artist.User?.FullName}
-                  <Badge bg={artist.User?.IsDeleted === false ? 'success' : 'warning'}>
-                    {artist.User?.IsDeleted === false ? 'Active' : 'Inactive'}
-                  </Badge>
-                </Card.Title>
-                <div className="card-details">
-                  <div className="mb-2">
-                    <strong>Services:</strong>
-                    <div className="mt-1">
-                      {artist.ArtistServices?.map((service) => (
-                        <Badge key={service.ServiceId} bg="info" className="me-1 mb-1">
-                          {service.Service?.Name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Experience:</strong> {artist.YearsOfExperience}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Level:</strong> {artist.Level}
-                  </div>
-                  <div className="mb-2">
-                    Rating: {artist.AverageRating} <FaStar className="text-warning" />
-                  </div>
-                </div>
-                <div className="d-flex justify-content-between mt-3">
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm"
-                    onClick={() => handleShowModal(artist)}
-                  >
-                    <FaEdit className="me-1" /> Edit
-                  </Button>
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm"
-                    onClick={() => handleShowDeleteModal(artist)}
-                  >
-                    <FaTrash className="me-1" /> {artist.User.IsDeleted === true? 'Active' : 'Deactive'}
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <div className="d-flex justify-content-between align-items-center mt-4">
-        <div className="text-muted">
-          Showing {artists.length} of {totalCount} artists
+  if (isLoading) {
+    return (
+      <div className="container py-5">
+        <div className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
         </div>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+      </div>
+    );
+  }
+
+  if (!artist) {
+    return (
+      <div className="container py-5">
+        <div className="alert alert-info">Không tìm thấy thông tin artist</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container py-5">
+      <MyBreadcrumb items={breadcrumbItems} />
+      <div className="row mb-5">
+        <div className="col-md-12">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex align-items-center">
+                <div className="me-4">
+                  <img
+                    src={artist.User.ImageUrl}
+                    alt={artist.User.FullName}
+                    className="rounded-circle"
+                    style={{
+                      width: "200px",
+                      height: "200px",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+                <div>
+                  <h2 className="mb-1">{artist.User.FullName}</h2>
+                  <p className="text-muted mb-1">Level: {artist.Level}</p>
+                  <p className="text-muted">
+                    Kinh nghiệm: {artist.YearsOfExperience} năm
+                  </p>
+                  {artist.AverageRating && (
+                    <p className="text-muted">
+                      Đánh giá: {artist.AverageRating}/5
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <div className="row">
+        <div className="col-md-12 mb-4">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title border-bottom pb-3">
+                Thông tin cá nhân
+              </h4>
+              <div className="row">
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <strong className="text-muted">Email:</strong>
+                    <p className="mb-0">{artist.User.Email}</p>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <strong className="text-muted">Số điện thoại:</strong>
+                    <p className="mb-0">{artist.User.PhoneNumber}</p>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <strong className="text-muted">Ngày sinh:</strong>
+                    <p className="mb-0">
+                      {new Date(artist.User.DateOfBirth).toLocaleDateString(
+                        "vi-VN"
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-12 mb-4">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title border-bottom pb-3">
+                Dịch vụ chuyên môn
+              </h4>
+              <div className="d-flex flex-wrap gap-2">
+                {artist.ArtistServices?.map((as) => {
+                    if (as.Service.IsDeleted === false) {
+                        return (
+                            <span
+                              key={as.ServiceId}
+                              className="badge bg-secondary rounded-pill"
+                            >
+                              {as.Service.Name}
+                            </span>
+                          )
+                    }
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-12">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title border-bottom pb-3">Lịch làm việc</h4>
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Ngày làm việc</th>
+                      <th>Giờ bắt đầu</th>
+                      <th>Giờ kết thúc</th>
+                      <th>Thời gian giải lao</th>
+                      <th>Địa chỉ</th>
+                      <th>Mô tả của cửa hàng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {artist.ArtistStores?.map((store) => (
+                      <tr key={store.StoreId}>
+                        <td>
+                          {new Date(store.WorkingDate).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </td>
+                        <td>{store.StartTime}</td>
+                        <td>{store.EndTime}</td>
+                        <td>{store.BreakTime}</td>
+                        <td>{store.Store.Address}</td>
+                        <td>{store.Store.Description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="button" className="btn btn-sm btn-primary" onClick={() => handleShowModal()}>
+            Sửa Thông Tin
+          </button>
+      </div>
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Sửa thông tin</Modal.Title>
@@ -480,10 +452,10 @@ const Artists = () => {
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Họ tên</Form.Label>
+              <Form.Label>Họ ttên</Form.Label>
               <Form.Control
                 type="text"
-                name="FullName"
+                name="FullNameFullName"
                 value={formData.FullName}
                 onChange={handleInputChange}
                 required
@@ -639,30 +611,8 @@ const Artists = () => {
           </Modal.Footer>
         </Form>
       </Modal>
-
-      {/* Delete Confirmation Modal */}
-      {
-        (selectedArtist?.User !== undefined && selectedArtist?.User !== null) && (
-          <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to {selectedArtist.User?.IsDeleted === true? 'active' : 'deactive'} {selectedArtist.User?.FullName}? Customer can {selectedArtist.User?.IsDeleted === true? '' : 'not'} see this artist.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseDeleteModal}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={deleteArtist}>
-          {selectedArtist.User.IsDeleted === true? 'Active' : 'Deactive'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-        )
-      }
-    </Container>
+    </div>
   );
 };
 
-export default Artists; 
+export default ArtistDetail;

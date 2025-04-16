@@ -11,14 +11,17 @@ import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
-import Artists from "./pages/Artists";
-import Bookings from "./pages/Bookings";
+import Bookings from "./pages/booking/index";
 import Analytics from "./components/Analytics";
 import Customers from "./pages/Customers";
 import Designs from "./pages/Designs";
 import Services from "./pages/Services";
 import Login from "./pages/Login";
 import Stores from "./pages/Stores";
+import Artists from "./pages/artist";
+import ArtistDetail from "./pages/artist/[id]";
+import BookingDetail from "./pages/booking/[id]";
+import PaymentResult from "./pages/payment/result";
 
 // Tạo ProtectedRoute component
 const ProtectedRoute = () => {
@@ -29,7 +32,6 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  try {
     // 2. Giải mã token để kiểm tra hết hạn
     // const decodedToken = jwtDecode(token);
     // const currentTime = Date.now() / 1000;
@@ -51,12 +53,6 @@ const ProtectedRoute = () => {
         </div>
       </div>
     );
-
-  } catch (error) {
-    console.error('Token invalid:', error);
-    localStorage.removeItem('token');
-    return <Navigate to="/login" replace />;
-  }
 };
 
 function App() {
@@ -65,12 +61,15 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Login/>}/>
+        <Route path="paymentResult" element={<PaymentResult/>}/>
         <Route element={<ProtectedRoute />}>
           <Route path="/customers" element={<Customers />} />
           <Route path="/dashboard" element={<Dashboard/>}/>
           <Route path="/designs" element={<Designs />} />
           <Route path="/artists" element={<Artists />} />
+          <Route path="/artist/:id" element={<ArtistDetail/>}/>
           <Route path="/bookings" element={<Bookings />} />
+          <Route path="/booking/:id" element={<BookingDetail />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/services" element={<Services />} />
           <Route path="/stores" element={<Stores />} />

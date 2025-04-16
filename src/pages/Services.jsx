@@ -51,7 +51,7 @@ const Services = () => {
       const count = `$count=true`;
       const skip = currentPage * pageSize;
       const pagination = `&$top=${pageSize}&$skip=${skip}`;
-      const selectStore = `&$select=id,name,price,imageUrl,description,isAdditional,isdeleted`;
+      const selectStore = `&$select=id,name,price,imageUrl,description,isAdditional,isdeleted,imageDescriptionUrl`;
       const expandCategory = `&$expand=categoryServices`
       const res = await axiosInstance.get(
         `${uri}${filter}${count}${pagination}${selectStore}${expandCategory}`
@@ -113,6 +113,8 @@ const Services = () => {
         ImageUrl: service.ImageUrl,
         NewImage: null,
         IsAdditional: service.IsAdditional,
+        ImageDescriptionUrl: service.ImageDescriptionUrl,
+        NewImageDescription: null
       });
       console.log(service.CategoryServices);
       
@@ -130,6 +132,8 @@ const Services = () => {
         ImageUrl: "",
         NewImage: null,
         IsAdditional: false,
+        ImageDescriptionUrl: "",
+        NewImageDescription: null
       });
     }
     setShowModal(true);
@@ -166,6 +170,15 @@ const Services = () => {
     }));
   };
 
+  const handleImageDescriptionChange = (e) => {
+    const file = e.target.files[0];
+    setFormData((prev) => ({
+      ...prev,
+      NewImageDescription: file,
+      ImageDescriptionUrl: URL.createObjectURL(file),
+    }));
+  };
+
   const handleSearch = (e) =>  {
     const search = e.target.value
     setSearchTerm(search);
@@ -190,6 +203,13 @@ const Services = () => {
       }
       if (formData.ImageUrl) {
         formDataToSend.append("ImageUrl", formData.ImageUrl);
+      }
+
+      if (formData.NewImageDescription) {
+        formDataToSend.append("NewImageDescription", formData.NewImageDescription);
+      }
+      if (formData.ImageDescriptionUrl) {
+        formDataToSend.append("ImageDescriptionUrl", formData.ImageDescriptionUrl);
       }
 
       // Handle categories
@@ -391,6 +411,11 @@ const Services = () => {
               <Form.Label>Hình ảnh</Form.Label>
               <Form.Control type="file" onChange={handleImageChange} accept="image/*" disabled={isSubmitting} />
               {formData.ImageUrl && <img src={formData.ImageUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Hình ảnh</Form.Label>
+              <Form.Control type="file" onChange={handleImageDescriptionChange} accept="image/*" disabled={isSubmitting} />
+              {formData.ImageDescriptionUrl && <img src={formData.ImageDescriptionUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Check type="checkbox" name="IsAdditional" label="Dịch vụ bổ sung" checked={formData.IsAdditional} onChange={handleInputChange} disabled={isSubmitting} />

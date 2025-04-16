@@ -13,10 +13,9 @@ import {
   Legend,
 } from 'chart.js';
 import Profile from '../components/Profile';
-import { jwtDecode } from 'jwt-decode';
 import { getRole } from '../services/helper';
 import Analytics from '../components/Analytics';
-import Bookings from './Bookings';
+import Bookings from './booking';
 
 ChartJS.register(
   CategoryScale,

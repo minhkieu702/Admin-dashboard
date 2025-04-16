@@ -30,8 +30,9 @@ export const getSideOfFinger = {
 }
 
 export const getServiceStatusInBooking = {
-    0: "Not ready",
-    1: "Start",
-    2: "Finish",
+    _: "Canceled",
+    0: "Waiting",
+    1: "Confirmed",
+    2: "Serving",
     3: "Complete"
 }
