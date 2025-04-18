@@ -81,7 +81,7 @@ const [feedbacks, setFeedbacks] = useState([]);
   }, [currentPage, pageSize, searchTerm]);
   
   return (
-    <Container fluid>
+    <Container >
       <Row className="mb-4">
         <Col>
         <InputGroup>
