@@ -6,7 +6,8 @@ const axiosInstance = axios.create({
   // baseURL: "https://localhost:7012/",
 //   timeout: 10000,
   headers: {
-    "Content-Type": "multipart/form-data,application/json"
+    "Content-Type": "multipart/form-data",
+    Authorization: `Bearer ${localStorage.getItem("token")}`
   }
 });
 

@@ -30,9 +30,15 @@ export const getSideOfFinger = {
 }
 
 export const getServiceStatusInBooking = {
-    _: "Canceled",
+    "-1": "Canceled",
     0: "Waiting",
     1: "Confirmed",
     2: "Serving",
     3: "Complete"
+}
+
+export const getArtistStoreStatus = {
+    0: "Pending",
+    "-1": "Rejected",
+    1: "Accepted"
 }

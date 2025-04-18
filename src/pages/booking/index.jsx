@@ -41,6 +41,8 @@ const Bookings = () => {
   const [method, setMethod] = useState(0);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState([]);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const payOnline = async (formDataToSend) => {
     const response = await axiosInstance.post(
@@ -93,32 +95,49 @@ const Bookings = () => {
       const skip = currentPage * pageSize;
       const id = getId();
       const role = getRole();
-
+  
       const baseUrl = "/odata/booking?";
       const filter = role == 1 ? `artistStore/artistId eq ${id}` : "";
       const filterStatus = status == -2 ? "" : `status eq ${status}`;
-      const combinedFilter = [filter, filterStatus]
-        .filter(Boolean)
-        .join(" and ");
+      
+      // Xử lý filter ngày theo yêu cầu
+      let dateFilter = "";
+      if (fromDate && toDate) {
+        dateFilter = `(serviceDate ge ${fromDate} and serviceDate le ${toDate})`;
+      } else if (fromDate) {
+        dateFilter = `serviceDate ge ${fromDate}`;
+      } else if (toDate) {
+        dateFilter = `serviceDate le ${toDate}`;
+      }
+  
+      // Kết hợp tất cả các filter
+      const combinedFilter = [
+        filter, 
+        filterStatus,
+        dateFilter
+      ].filter(Boolean).join(" and ");
+      
       const filterQuery = combinedFilter ? `$filter=${combinedFilter}&` : "";
       const count = `$count=true`;
       const pagination = `&$top=${pageSize}&$skip=${skip}`;
       const select = `&$select=id,createdAt,lastModifiedAt,status,startTime,serviceDate,predictEndTime,totalAmount,customerSelectedId,artistStoreId`;
       const expandArtistStore = `&$expand=artistStore($select=workingDate;$expand=artist($select=ID,username;$expand=user($select=fullname)),store($select=Address)),customerSelected($select=id;$expand=customer($select=id;$expand=user($select=fullName,email,phoneNumber)))`;
       const orderBy = `&$orderby=lastModifiedAt desc`;
+      
       const url = `${baseUrl}${filterQuery}${count}${pagination}${select}${expandArtistStore}${orderBy}`;
-      console.log(url);
-
+      console.log("API URL:", url);
+  
       const response = await axiosInstance.get(url);
-
+  
       const totalCount = response["@odata.count"] ?? 0;
       setTotalPages(Math.ceil(totalCount / pageSize));
       setTotalCount(totalCount);
-      console.log(response.value);
-
+      console.log("Booking data:", response.value);
+  
       setBookings(response.value);
     } catch (error) {
       console.error("Error fetching bookings:", error);
+      // Có thể thêm xử lý lỗi ở đây (ví dụ: hiển thị thông báo cho người dùng)
     }
   };
 
@@ -128,7 +147,7 @@ const Bookings = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage, pageSize, status]);
+  }, [currentPage, pageSize, status, fromDate, toDate]);
 
   const navigate = useNavigate();
   const viewBookingDetails = (id) => {
@@ -177,13 +196,19 @@ const Bookings = () => {
                   <option value="Acrylic">Acrylic</option>
                 </Form.Select>
               </Form.Group>
-            </Col>
+            </Col>*/}
             <Col md={3}>
               <Form.Group className="mb-3 mb-md-0">
-                <Form.Label>Date</Form.Label>
-                <Form.Control type="date" />
+                <Form.Label>From</Form.Label>
+                <Form.Control type="date" onChange={(e) => setFromDate(e.target.value)} />
               </Form.Group>
-            </Col> */}
+            </Col> 
+            <Col md={3}>
+              <Form.Group className="mb-3 mb-md-0">
+                <Form.Label>To</Form.Label>
+                <Form.Control type="date" onChange={(e) => setToDate(e.target.value)} />
+              </Form.Group>
+            </Col> 
             <Col md={3}>
               <Form.Group>
                 <Form.Label>Status</Form.Label>
@@ -323,7 +348,7 @@ const Bookings = () => {
                     <div className="d-flex align-items-center">
                       <div>
                         <div className="fw-medium">
-                          {booking.StartTime.slice(0, 5)}
+                          {booking.StartTime.slice(0, 8)}
                         </div>
                       </div>
                     </div>
@@ -332,7 +357,7 @@ const Bookings = () => {
                     <div className="d-flex align-items-center">
                       <div>
                         <div className="fw-medium">
-                          {booking.PredictEndTime.slice(0, 5)}
+                          {booking.PredictEndTime.slice(0, 8)}
                         </div>
                       </div>
                     </div>

@@ -320,18 +320,23 @@ const BookingDetail = () => {
                       <FaClock className="me-2" />
                       Start Time
                     </span>
-                    <span>{booking.StartTime}</span>
+                    <span>{booking.StartTime.slice(0, 8)}</span>
                   </ListGroup.Item>
                   <ListGroup.Item className="d-flex justify-content-between">
                     <span>
                       <FaClock className="me-2" />
                       Predict End Time
                     </span>
-                    <span>{booking.PredictEndTime}</span>
+                    <span>{booking.PredictEndTime.slice(0, 8)}</span>
                   </ListGroup.Item>
                   <ListGroup.Item className="d-flex justify-content-between">
                     <span>Total Amount</span>
-                    <span className="fw-bold">${booking.TotalAmount}</span>
+                    <span className="fw-bold">
+                    {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(booking.TotalAmount)}
+                    </span>
                   </ListGroup.Item>
                 </ListGroup>
               </Card.Body>
@@ -414,7 +419,12 @@ const BookingDetail = () => {
                               ]
                             })`}
                           </td>
-                          <td>{service.NailDesignService?.Service?.Price} vnd</td>
+                          <td>
+                          {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(service.NailDesignService?.Service?.Price)}
+                          </td>
                           <td>
                             {service.NailDesignService?.Status === -1 ? (
                               <Button

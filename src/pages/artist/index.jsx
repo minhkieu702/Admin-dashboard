@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Button, Form, InputGroup, Badge, Modal, Spin
 import { FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 import axiosInstance from '@services/axiosConfig';
 import Pagination from '@components/Pagination';
+import { useNavigate } from 'react-router-dom';
 
 const Artists = () => {
   const pageSizeOptions = [8, 16, 24, 32];
@@ -94,57 +95,10 @@ const Artists = () => {
       return form;
     }));
   };
-
+  const navigate = useNavigate();
   const handleShowModal = async (artist) => {
-    setSelectedArtist(artist ? artist : null);
-    const dateOfBirth = artist?.User?.DateOfBirth
-        ? new Date(artist?.User?.DateOfBirth).toISOString().split("T")[0]
-        : "";
-    setFormData({
-        Level: artist?.Level || 1,
-        YearsOfExperience: artist?.YearsOfExperience || 0,
-        FullName: artist?.User?.FullName || "",
-        ImageUrl: artist?.User?.ImageUrl || "",
-        PhoneNumber: artist?.User?.PhoneNumber || "",
-        Email: artist?.User?.Email || "",
-        DateOfBirth: dateOfBirth,
-    });
+    navigate(`/artist/:${artist.ID}`);
 
-    // Add existing artist services to selectedServices
-    artist?.ArtistServices?.map(service => {
-        if (service.Service.IsDeleted === false) {
-            handleSelectService(service.ServiceId)
-        }
-    });
-
-    // Add artist stores to forms if they are within 3 days from now
-    
-    const validArtistStores = artist?.ArtistStores?.map(store => {
-        const date = new Date(store.WorkingDate);
-        if (date > today) {
-          const formatTime = (timeString) => {
-            if (!timeString) return "";
-            return timeString.split(".")[0].slice(0, 5);
-          };
-          return {
-            id: Date.now() + Math.random(),
-            StoreId: store.StoreId,
-            WorkingDate: new Date(store.WorkingDate).toISOString().split("T")[0],
-            StartTime: formatTime(store.StartTime),
-            EndTime: formatTime(store.EndTime),
-            BreakTime: store.BreakTime
-          };
-        }
-        return null; // Hoặc undefined nếu không return gì
-      }).filter(store => store !== null && store !== undefined); // Lọc bỏ giá trị null/undefined
-      
-      // Kiểm tra xem có dữ liệu hay không
-      if (validArtistStores && validArtistStores.length > 0) {
-            setArtistStoreForms(validArtistStores);
-      }
-    
-    await fetchServicesAndStores();
-    setShowModal(true);
   };
 
   const fetchArtist = async () => {
@@ -443,7 +397,7 @@ const Artists = () => {
                     size="sm"
                     onClick={() => handleShowModal(artist)}
                   >
-                    <FaEdit className="me-1" /> Edit
+                    <FaEdit className="me-1" /> View Details
                   </Button>
                   <Button 
                     variant="outline-danger" 

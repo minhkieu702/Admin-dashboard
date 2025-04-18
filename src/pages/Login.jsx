@@ -81,12 +81,7 @@ const Login = () => {
       formData.append("PlatformType", 1);
       formData.append("Token", deviceToken);
 
-      await axiosInstance.post(`/api/DeviceToken`, formData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data"
-        }
-      });
+      await axiosInstance.post(`/api/DeviceToken`, formData);
 
       // 4. Start SignalR connection
       await signalRService.startConnection(accessToken);
@@ -127,11 +122,7 @@ const Login = () => {
 
     try {
       // 1. Login
-      const response = await axiosInstance.post('/api/Authentication/staff/login', formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axiosInstance.post('/api/Authentication/staff/login', formDataToSend);
       
       const token = response.accessToken;
       console.log('Login successful, token:', token);
