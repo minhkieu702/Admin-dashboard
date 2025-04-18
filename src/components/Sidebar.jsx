@@ -17,52 +17,67 @@ import { getRole } from "../services/helper";
 
 const Sidebar = () => {
   const location = useLocation();
+  const role = getRole();
 
   const menuItems = [
     { 
         path: "/dashboard", 
         icon: <FaHome />,
-        title: "Dashboard"
+        title: "Dashboard",
+        role: 1
     },
     { 
         path: "/customers",
         icon: <FaUsers />, 
-        title: "Customers" 
+        title: "Customers",
+        role: 2
     },
     { 
         path: "/designs", 
         icon: <FaHandPaper />, 
-        title: "Designs" 
+        title: "Designs" ,
+        role: 2
     },
     {
       path: "/artists",
       icon: <FaUserCog />,
       title: "Nail Artists",
+      role: 2
     },
     {
       path: "/bookings",
       icon: <FaCalendarAlt />,
       title: "Bookings",
+      role: 1
     },
     {
       path: "/services",
       icon: <FaServicestack />,
       title: "Services",
+      role: 2
     },
     {
       path: "/stores",
       icon: <FaStoreAlt />,
       title: "Stores",
+      role: 2
     },
-    { path: "/settings", icon: <FaCog />, title: "Settings" },
   ];
+  // Filter menu items based on role
+  const filteredMenuItems = menuItems.filter(item => 
+    role == 2 || (role == 1 && item.role === 1)
+  );
+
+  console.log(filteredMenuItems, role);
+  
 
   return (
     <div className="sidebar">
-      <div className="sidebar-brand">{getRole() == 1 ? "Artist Portal" : getRole() == 2 ? "Admin Dashboard" : ""}</div>
+      <div className="sidebar-brand">{role == 1 ? "Artist Portal" : role == 2 ? "Admin Dashboard" : ""}</div>
       <Nav className="sidebar-menu flex-column">
-        {menuItems.map((item) => (
+        {filteredMenuItems.map((item) => (
           <Nav.Item key={item.path}>
+            {console.log(item.title)}
             <Link
               to={item.path}
               className={`sidebar-menu-item nav-link d-flex align-items-center ${
