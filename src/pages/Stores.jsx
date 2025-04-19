@@ -223,7 +223,7 @@ const Stores = () => {
         <Container fluid>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2>stores</h2>
-            <Button variant="primary">Add New store</Button>
+            <Button variant="primary" onClick={() => handleShowModal()}>Add New store</Button>
           </div>
     
           <div className="mb-4">

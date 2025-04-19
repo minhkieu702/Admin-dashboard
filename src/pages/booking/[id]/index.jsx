@@ -96,6 +96,13 @@ const BookingDetail = () => {
     }));
   };
 
+  const fetchFeedback = async (typeId) => {
+    const res = await axiosInstance.get(
+      `/odata/feedback?$filter=typeId eq ${typeId} and bookingId eq ${id.substring(id.indexOf(":") + 1)}&$select=id,typeId,lastModifiedAt,rating,content,feedbackType&$expand=customer($select=id;$expand=user($select=fullname)),feedbackImages($select=id,imageUrl,numerialOrder;$orderby=numerialOrder)`
+    )
+    return res.value
+  }    
+
   const fetchCustomerSelected = async (customerSelectedID) => {
     const response = await axiosInstance.get(
       `/odata/customerSelected?$filter=id eq ${customerSelectedID}&$select=id,customerID&$expand=customer($select=id,description;$expand=user($select=id,fullname,phoneNumber,imageUrl))`
@@ -137,9 +144,11 @@ const BookingDetail = () => {
     const nailDesignService = response.value?.[0];
     if (!nailDesignService) return null;
 
-    const service = await fetchService(nailDesignService.ServiceId);
+    const [service, feedback] = await Promise.all([fetchService(nailDesignService.ServiceId), fetchFeedback(nailDesignService.NailDesign.Design.ID)])
     nailDesignService.Status = -1;
     nailDesignService.Service = service;
+    nailDesignService.NailDesign.Design.Feedback = feedback
+
     return nailDesignService;
   };
 
@@ -155,7 +164,17 @@ const BookingDetail = () => {
       `/odata/artistStore?$filter=id eq ${artistStoreId}&$select=id,workingDate,startTime,endTime,storeId,artistId&$expand=store($select=id,imageUrl,description,address),artist($select=id,yearsOfExperience,level;$expand=user($select=id,email,fullname, imageUrl))`
     );
 
-    return response.value?.[0] ?? null;
+    const artistStore = response.value?.[0]
+
+    const [artistFeedback, storeFeedback] = await Promise.all([
+      fetchFeedback(artistStore.ArtistId),
+      fetchFeedback(artistStore.StoreId),
+    ]);
+
+    artistStore.Artist.Feedback = artistFeedback
+    artistStore.Store.Feedback = storeFeedback
+
+    return artistStore
   };
 
   const fetchBookings = async () => {
@@ -176,6 +195,9 @@ const BookingDetail = () => {
 
       bookingRes.CustomerSelected = customerSelected;
       bookingRes.ArtistStore = artistStore;
+
+      console.log(bookingRes);
+      
 
       setBooking(bookingRes);
     } catch (error) {
@@ -284,7 +306,6 @@ const BookingDetail = () => {
       <MyBreadcrumb items={breadcrumbItems} />
       {booking && (
         <Row>
-          {console.log(![1, 2].includes(booking.Status))}
           <Col md={8}>
             <Card className="mb-4">
               <Card.Header className="d-flex justify-content-between align-items-center">
@@ -388,82 +409,130 @@ const BookingDetail = () => {
                   </thead>
                   <tbody>
                     {booking.CustomerSelected?.NailDesignServiceSelecteds?.map(
-                      (service, index) => (
-                        <tr key={index}>
-                          <td>{service.NailDesignService?.Service?.Name}</td>
-                          <td>
-                            <div>
-                              <strong>
-                                {
-                                  service.NailDesignService?.NailDesign?.Design
-                                    ?.Name
-                                }
-                              </strong>
-                              <div className="text-muted small">
-                                {
-                                  service.NailDesignService?.NailDesign?.Design
-                                    ?.Description
-                                }
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            {`${
-                              getNameOfFinger[
-                                service.NailDesignService?.NailDesign
-                                  ?.NailPosition
-                              ]
-                            } (${
-                              getSideOfFinger[
-                                service.NailDesignService?.NailDesign?.IsLeft
-                              ]
-                            })`}
-                          </td>
-                          <td>
-                          {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(service.NailDesignService?.Service?.Price)}
-                          </td>
-                          <td>
-                            {service.NailDesignService?.Status === -1 ? (
-                              <Button
-                                variant="primary"
-                                disabled={booking.Status === 2 ? false : true}
-                                size="sm"
-                                onClick={() =>
-                                  handleStartService(
-                                    service.NailDesignService?.ServiceId
-                                  )
-                                }
-                              >
-                                <FaHourglassStart className="me-1" /> Start
-                                Timer
-                              </Button>
-                            ) : service.NailDesignService?.Status === 0 ? (
-                              <Button
-                                variant="success"
-                                size="sm"
-                                onClick={() =>
-                                  handleCompleteService(
-                                    service.NailDesignService?.ServiceId
-                                  )
-                                }
-                              >
-                                <FaCheck className="me-1" /> Complete
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="success"
-                                disabled={true}
-                                size="sm"
-                              >
-                                <FaCheck className="me-1" /> Complete
-                              </Button>
+                      (service, index, array) => {
+                        const isLastOfDesign = index === array.length - 1 || 
+                          array[index + 1].NailDesignService.NailDesign.Design.ID !== 
+                          service.NailDesignService.NailDesign.Design.ID;
+                        
+                        return (
+                          <React.Fragment key={index}>
+                            <tr>
+                              <td>{service.NailDesignService?.Service?.Name}</td>
+                              <td>
+                                <div>
+                                  <strong>
+                                    {
+                                      service.NailDesignService?.NailDesign?.Design
+                                        ?.Name
+                                    }
+                                  </strong>
+                                  <div className="text-muted small">
+                                    {
+                                      service.NailDesignService?.NailDesign?.Design
+                                        ?.Description
+                                    }
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                {`${
+                                  getNameOfFinger[
+                                    service.NailDesignService?.NailDesign
+                                      ?.NailPosition
+                                  ]
+                                } (${
+                                  getSideOfFinger[
+                                    service.NailDesignService?.NailDesign?.IsLeft
+                                  ]
+                                })`}
+                              </td>
+                              <td>
+                              {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                            }).format(service.NailDesignService?.Service?.Price)}
+                              </td>
+                              <td>
+                                {service.NailDesignService?.Status === -1 ? (
+                                  <Button
+                                    variant="primary"
+                                    disabled={booking.Status === 2 ? false : true}
+                                    size="sm"
+                                    onClick={() =>
+                                      handleStartService(
+                                        service.NailDesignService?.ServiceId
+                                      )
+                                    }
+                                  >
+                                    <FaHourglassStart className="me-1" /> Start
+                                    Timer
+                                  </Button>
+                                ) : service.NailDesignService?.Status === 0 ? (
+                                  <Button
+                                    variant="success"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleCompleteService(
+                                        service.NailDesignService?.ServiceId
+                                      )
+                                    }
+                                  >
+                                    <FaCheck className="me-1" /> Complete
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="success"
+                                    disabled={true}
+                                    size="sm"
+                                  >
+                                    <FaCheck className="me-1" /> Complete
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                            {isLastOfDesign && service.NailDesignService?.NailDesign?.Design?.Feedback?.length > 0 && (
+                              <tr className="bg-light">
+                                <td colSpan="5">
+                                  <div className="p-3">
+                                    {service.NailDesignService?.NailDesign?.Design?.Feedback?.map((feedback, feedbackIndex) => (
+                                      <div key={feedbackIndex} className="border-bottom pb-2 mb-2">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                          <div>
+                                            <strong>{feedback.Customer?.User?.FullName}</strong>
+                                            <div className="text-muted small">
+                                              {new Date(feedback.LastModifiedAt).toLocaleDateString()}
+                                            </div>
+                                          </div>
+                                          <div className="text-warning">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                              <span key={i}>
+                                                {i < feedback.Rating ? "★" : "☆"}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        <p className="mb-0 mt-1">{feedback.Content}</p>
+                                        {feedback.FeedbackImages?.length > 0 && (
+                                          <div className="d-flex gap-2 mt-2">
+                                            {feedback.FeedbackImages.map((image) => (
+                                              <Image
+                                                key={image.Id}
+                                                src={image.ImageUrl}
+                                                thumbnail
+                                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                              />
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                        </tr>
-                      )
+                          </React.Fragment>
+                        );
+                      }
                     )}
                   </tbody>
                 </Table>
@@ -547,6 +616,43 @@ const BookingDetail = () => {
                     </div>
                   </div>
                 </div>
+                {booking.ArtistStore?.Artist?.Feedback?.length > 0 && (
+                  <div className="mt-3">
+                    <h6 className="mb-2">Recent Feedback</h6>
+                    {booking.ArtistStore?.Artist?.Feedback?.map((feedback, index) => (
+                      <div key={index} className="border-bottom pb-2 mb-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <strong>{feedback.Customer?.User?.FullName}</strong>
+                            <div className="text-muted small">
+                              {new Date(feedback.LastModifiedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="text-warning">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span key={i}>
+                                {i < feedback.Rating ? "★" : "☆"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="mb-0 mt-1">{feedback.Content}</p>
+                        {feedback.FeedbackImages?.length > 0 && (
+                          <div className="d-flex gap-2 mt-2">
+                            {feedback.FeedbackImages.map((image) => (
+                              <Image
+                                key={image.Id}
+                                src={image.ImageUrl}
+                                thumbnail
+                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card.Body>
             </Card>
 
@@ -572,6 +678,43 @@ const BookingDetail = () => {
                     {booking.ArtistStore?.Store?.Description}
                   </div>
                 </div>
+                {booking.ArtistStore?.Store?.Feedback?.length > 0 && (
+                  <div className="mt-3">
+                    <h6 className="mb-2">Recent Feedback</h6>
+                    {booking.ArtistStore?.Store?.Feedback?.map((feedback, index) => (
+                      <div key={index} className="border-bottom pb-2 mb-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <strong>{feedback.Customer?.User?.FullName}</strong>
+                            <div className="text-muted small">
+                              {new Date(feedback.LastModifiedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="text-warning">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <span key={i}>
+                                {i < feedback.Rating ? "★" : "☆"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="mb-0 mt-1">{feedback.Content}</p>
+                        {feedback.FeedbackImages?.length > 0 && (
+                          <div className="d-flex gap-2 mt-2">
+                            {feedback.FeedbackImages.map((image) => (
+                              <Image
+                                key={image.Id}
+                                src={image.ImageUrl}
+                                thumbnail
+                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card.Body>
             </Card>
           </Col>
