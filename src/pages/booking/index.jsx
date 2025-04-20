@@ -45,6 +45,9 @@ const Bookings = () => {
   const [toDate, setToDate] = useState(null);
 
   const payOnline = async (formDataToSend) => {
+    for (let pair of formDataToSend.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
     const response = await axiosInstance.post(
       `/api/Payment/PayOSUrl`,
       formDataToSend,
@@ -78,16 +81,14 @@ const Bookings = () => {
   };
 
   const handlePayment = async () => {
-    console.log(selectedBookings.length);
-
     const formDataToSend = new FormData();
-    selectedBookings.forEach((item, index) => {
+    selectedBookings.forEach((item, index) => {      
       formDataToSend.append(
         `paymentDetailRequests[${index}].bookingId`,
-        item.ID
+        item
       );
     });
-    // method === 0 ? await payOnline(formDataToSend) : await payOffline(formDataToSend)
+    method === 0 ? await payOnline(formDataToSend) : await payOffline(formDataToSend)
   };
 
   const fetchBookings = async () => {
@@ -95,11 +96,11 @@ const Bookings = () => {
       const skip = currentPage * pageSize;
       const id = getId();
       const role = getRole();
-  
+
       const baseUrl = "/odata/booking?";
       const filter = role == 1 ? `artistStore/artistId eq ${id}` : "";
       const filterStatus = status == -2 ? "" : `status eq ${status}`;
-      
+
       // Xử lý filter ngày theo yêu cầu
       let dateFilter = "";
       if (fromDate && toDate) {
@@ -109,31 +110,29 @@ const Bookings = () => {
       } else if (toDate) {
         dateFilter = `serviceDate le ${toDate}`;
       }
-  
+
       // Kết hợp tất cả các filter
-      const combinedFilter = [
-        filter, 
-        filterStatus,
-        dateFilter
-      ].filter(Boolean).join(" and ");
-      
+      const combinedFilter = [filter, filterStatus, dateFilter]
+        .filter(Boolean)
+        .join(" and ");
+
       const filterQuery = combinedFilter ? `$filter=${combinedFilter}&` : "";
       const count = `$count=true`;
       const pagination = `&$top=${pageSize}&$skip=${skip}`;
       const select = `&$select=id,createdAt,lastModifiedAt,status,startTime,serviceDate,predictEndTime,totalAmount,customerSelectedId,artistStoreId`;
       const expandArtistStore = `&$expand=artistStore($select=workingDate;$expand=artist($select=ID,username;$expand=user($select=fullname)),store($select=Address)),customerSelected($select=id;$expand=customer($select=id;$expand=user($select=fullName,email,phoneNumber)))`;
       const orderBy = `&$orderby=lastModifiedAt desc`;
-      
+
       const url = `${baseUrl}${filterQuery}${count}${pagination}${select}${expandArtistStore}${orderBy}`;
       console.log("API URL:", url);
-  
+
       const response = await axiosInstance.get(url);
-  
+
       const totalCount = response["@odata.count"] ?? 0;
       setTotalPages(Math.ceil(totalCount / pageSize));
       setTotalCount(totalCount);
       console.log("Booking data:", response.value);
-  
+
       setBookings(response.value);
     } catch (error) {
       console.error("Error fetching bookings:", error);
@@ -200,15 +199,21 @@ const Bookings = () => {
             <Col md={3}>
               <Form.Group className="mb-3 mb-md-0">
                 <Form.Label>From</Form.Label>
-                <Form.Control type="date" onChange={(e) => setFromDate(e.target.value)} />
+                <Form.Control
+                  type="date"
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
               </Form.Group>
-            </Col> 
+            </Col>
             <Col md={3}>
               <Form.Group className="mb-3 mb-md-0">
                 <Form.Label>To</Form.Label>
-                <Form.Control type="date" onChange={(e) => setToDate(e.target.value)} />
+                <Form.Control
+                  type="date"
+                  onChange={(e) => setToDate(e.target.value)}
+                />
               </Form.Group>
-            </Col> 
+            </Col>
             <Col md={3}>
               <Form.Group>
                 <Form.Label>Status</Form.Label>
@@ -226,8 +231,10 @@ const Bookings = () => {
         </Card.Body>
       </Card>
 
-      <Card className="mb-4">
-      <Card.Header>
+      {
+        selectedBookings && selectedBookings.length > 0 && (
+          <Card className="mb-4">
+        <Card.Header>
           <div className="d-flex align-items-center">
             <h5 className="mb-0">Payment</h5>
           </div>
@@ -250,10 +257,7 @@ const Bookings = () => {
               </Form.Group>
             </Col>
             <Col md={4} className="d-flex align-items-end">
-              <Button
-                className="w-100 py-3"
-                onClick={() => handlePayment()}
-              >
+              <Button className="w-100 py-3" onClick={() => handlePayment()}>
                 {method === 0 ? (
                   <>
                     <FaCreditCard className="me-2" />
@@ -270,6 +274,8 @@ const Bookings = () => {
           </Row>
         </Card.Body>
       </Card>
+        )
+      }
 
       <Card>
         <Card.Body className="p-0">
@@ -295,13 +301,16 @@ const Bookings = () => {
                   onDoubleClick={() => viewBookingDetails(booking.ID)}
                 >
                   <td>
-                    <Form.Check
-                      type="checkbox"
-                      id={booking.ID}
-                      onChange={() => handleSelectedBooking(booking.ID)}
-                      checked={selectedBookings.includes(booking.ID)}
-                      disabled={booking.Satus === 2 ? false : true}
-                    />
+                    {booking.Status == 2 ? (
+                      <Form.Check
+                        type="checkbox"
+                        id={booking.ID}
+                        onChange={() => handleSelectedBooking(booking.ID)}
+                        checked={selectedBookings.includes(booking.ID)}
+                      />
+                    ) : (
+                      <></>
+                    )}
                   </td>
                   <td>
                     <div className="d-flex align-items-center">

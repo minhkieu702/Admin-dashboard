@@ -10,14 +10,14 @@ const PaymentResult = () => {
   const status = searchParams.get("status");
   const isSuccess = status === "PAID";
 
-  const breadcrumbItems = [
-    { label: "Home", path: "/" },
-    { label: "Payment Result", path: "/payment/result" },
-  ];
+  // const breadcrumbItems = [
+  //   { label: "Home", path: "/" },
+  //   { label: "Payment Result", path: "/payment/result" },
+  // ];
 
   return (
     <Container className="w-100 fade-in p-4">
-      <MyBreadcrumb items={breadcrumbItems} />
+      {/* <MyBreadcrumb items={breadcrumbItems} /> */}
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "70vh" }}>
         <Card className="text-center p-4" style={{ maxWidth: "500px", width: "100%" }}>
           <Card.Body>
