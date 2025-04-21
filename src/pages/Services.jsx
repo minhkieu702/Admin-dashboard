@@ -330,25 +330,36 @@ const Services = () => {
                   </Badge>
                 </Card.Title>
                 <div className="card-details">
+                  
                   <div className="mb-2">
-                    <strong>Services:</strong>
+                  <div className="mb-2">
+                    <strong>Name:</strong>
+                    {service.Name}
+                  </div>
+                    <strong>CategoriesCategories:</strong>
                     <div className="mt-1">
-                      {service.ServiceServices?.map((service) => (
+                      {service.CategoryServices?.map((category, index) => (
                         <Badge
-                          key={service.ServiceId}
+                          key={index}
                           bg="info"
                           className="me-1 mb-1"
+                          title={category.Data.Description}
                         >
-                          {service.Service?.Name}
+                          {console.log(category)}
+                          {category.Data.Name}
                         </Badge>
                       ))}
                     </div>
                   </div>
                   <div className="mb-2">
-                    <strong>Experience:</strong> {service.YearsOfExperience}
+                    <strong>Price:</strong>
+                    {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                            }).format(service?.Price)}
                   </div>
                   <div className="mb-2">
-                    <strong>Level:</strong> {service.Level}
+                    <strong>Description:</strong> {service.Description}
                   </div>
                   <div className="mb-2">
                     Rating: {service.AverageRating}{" "}
@@ -413,7 +424,7 @@ const Services = () => {
               {formData.ImageUrl && <img src={formData.ImageUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Hình ảnh</Form.Label>
+              <Form.Label>Processing Description Image</Form.Label>
               <Form.Control type="file" onChange={handleImageDescriptionChange} accept="image/*" disabled={isSubmitting} />
               {formData.ImageDescriptionUrl && <img src={formData.ImageDescriptionUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
             </Form.Group>
@@ -441,7 +452,7 @@ const Services = () => {
               {isSubmitting ? (
                 <>
                   <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  {editingService ? "Đang cập nhật..." : "Đang thêm mới..."}
+                  {editingService ? "Loading..." : "Loading..."}
                 </>
               ) : editingService ? (
                 "Cập nhật"
