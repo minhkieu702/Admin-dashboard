@@ -33,7 +33,6 @@ const Services = () => {
     Price: 0,
     ImageUrl: "",
     NewImage: null,
-    IsAdditional: false
     });
   const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -51,7 +50,7 @@ const Services = () => {
       const count = `$count=true`;
       const skip = currentPage * pageSize;
       const pagination = `&$top=${pageSize}&$skip=${skip}`;
-      const selectStore = `&$select=id,name,price,imageUrl,description,isAdditional,isdeleted,imageDescriptionUrl`;
+      const selectStore = `&$select=id,name,price,imageUrl,description,isdeleted,imageDescriptionUrl`;
       const expandCategory = `&$expand=categoryServices`
       const res = await axiosInstance.get(
         `${uri}${filter}${count}${pagination}${selectStore}${expandCategory}`
@@ -112,7 +111,6 @@ const Services = () => {
         Price: service.Price,
         ImageUrl: service.ImageUrl,
         NewImage: null,
-        IsAdditional: service.IsAdditional,
         ImageDescriptionUrl: service.ImageDescriptionUrl,
         NewImageDescription: null
       });
@@ -131,7 +129,6 @@ const Services = () => {
         Price: 0,
         ImageUrl: "",
         NewImage: null,
-        IsAdditional: false,
         ImageDescriptionUrl: "",
         NewImageDescription: null
       });
@@ -148,7 +145,6 @@ const Services = () => {
         Price: 0,
         ImageUrl: "",
         NewImage: null,
-        IsAdditional: false,
     })
     setSelectedCategories([])
   };
@@ -195,7 +191,6 @@ const Services = () => {
       formDataToSend.append("Name", formData.Name);
       formDataToSend.append("Description", formData.Description);
       formDataToSend.append("Price", formData.Price);
-      formDataToSend.append("IsAdditional", formData.IsAdditional);
 
       // Handle image
       if (formData.NewImage) {
@@ -427,9 +422,6 @@ const Services = () => {
               <Form.Label>Processing Description Image</Form.Label>
               <Form.Control type="file" onChange={handleImageDescriptionChange} accept="image/*" disabled={isSubmitting} />
               {formData.ImageDescriptionUrl && <img src={formData.ImageDescriptionUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Check type="checkbox" name="IsAdditional" label="Dịch vụ bổ sung" checked={formData.IsAdditional} onChange={handleInputChange} disabled={isSubmitting} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Danh mục</Form.Label>

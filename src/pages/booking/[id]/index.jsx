@@ -539,9 +539,9 @@ const BookingDetail = () => {
               </Card.Body>
             </Card>
 
-            {(booking?.CustomerSelected?.NailDesignServiceSelecteds?.every(
+            {booking?.Status == 2 || (booking?.CustomerSelected?.NailDesignServiceSelecteds?.every(
               (c) => c.NailDesignService.Status === 1
-            ) || booking?.Status === 2) && (
+            )) && (
               <Card className="mb-4">
                 <Card.Header>
                   <div className="d-flex align-items-center">

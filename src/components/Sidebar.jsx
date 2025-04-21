@@ -66,10 +66,7 @@ const Sidebar = () => {
   // Filter menu items based on role
   const filteredMenuItems = menuItems.filter(item => 
     role == 2 || (role == 1 && item.role === 1)
-  );
-
-  console.log(filteredMenuItems, role);
-  
+  );  
 
   return (
     <div className="sidebar">
