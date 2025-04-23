@@ -119,7 +119,7 @@ const [feedbacks, setFeedbacks] = useState([]);
             <th>Name</th>
             <th>Email</th>
             <th>Phone Number</th>
-            <th>Description</th>
+          
             {/* <th>Actions</th> */}
           </tr>
         </thead>
@@ -137,7 +137,7 @@ const [feedbacks, setFeedbacks] = useState([]);
               <td>{customer.User.FullName}</td>
               <td>{customer.User.Email}</td>
               <td>{customer.User.PhoneNumber}</td>
-              <td>{customer.Description}</td>
+     
               {/* <td>
                 <Button variant="link" className="text-danger p-0" onSubmit={handle}>
                   <FaTrash />

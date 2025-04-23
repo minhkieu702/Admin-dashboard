@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Form, InputGroup, Modal, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, InputGroup, Modal, Spinner, Table, Image } from 'react-bootstrap';
 import axiosInstance from "../services/axiosConfig";
 import { FaEdit, FaEye, FaSearch } from "react-icons/fa";
 import Pagination from "../components/Pagination";
@@ -258,35 +258,53 @@ const Stores = () => {
             </Row>
           </div>
     
-          <Row>
-            {stores.map((store) => (
-              <Col key={store.ID} lg={3} md={4} sm={6} className="mb-4">
-                <Card className="h-100">
-                  <Card.Img variant="top" src={store.ImageUrl} />
-                  <Card.Body>
-                    <Card.Title>{store.Address}</Card.Title>
-                    <Card.Text>
-                      Province: {store.Province}
-                    </Card.Text>
-                    <Card.Text>
-                    Description: {store.Description}
-                    </Card.Text>
-                    <Card.Text>
-                      Average Rating: {store.AverageRating}
-                      </Card.Text>
-                    <div className="d-flex justify-content-between">
-                      <Button variant="outline-primary" size="sm" onClick={() => handleShowModal(store)}>
-                        <FaEdit /> Edit
-                      </Button>
-                      <Button variant="outline-danger" size="sm" onClick={() => handleShowDeleteModal(store)}>
-                        <FaEye /> Delete
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+          <Table responsive bordered hover>
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th>Address</th>
+      <th>Province</th>
+      <th>Description</th>
+      <th>Average Rating</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {stores.map((store) => (
+      <tr key={store.ID}>
+        <td>
+          <Image
+            src={store.ImageUrl}
+            alt="Store"
+            thumbnail
+            style={{ width: "80px", height: "80px", objectFit: "cover" }}
+          />
+        </td>
+        <td>{store.Address}</td>
+        <td>{store.Province}</td>
+        <td>{store.Description}</td>
+        <td>{store.AverageRating}</td>
+        <td>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            className="me-1"
+            onClick={() => handleShowModal(store)}
+          >
+            <FaEdit className="me-1" /> Edit
+          </Button>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => handleShowDeleteModal(store)}
+          >
+            <FaEye className="me-1" /> Delete
+          </Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
 
 
           <div className="d-flex justify-content-between align-items-center mt-4">

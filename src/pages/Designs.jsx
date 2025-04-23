@@ -327,21 +327,21 @@ return (
   <Container className="w-100 fade-in p-4">
     <div className="card-header bg-white py-3">
       <div className="d-flex justify-content-between align-items-center">
-        <h5 className="card-title mb-0">Quản lý Design</h5>
+        <h5 className="card-title mb-0">Design management</h5>
         <div className="d-flex gap-2">
           <div className="position-relative">
             <input
               type="search"
               className="form-control form-control-sm"
-              placeholder="Tìm kiếm design..."
-              aria-label="Tìm kiếm"
+              placeholder="Search design..."
+              aria-label="Search"
             />
             <span className="position-absolute top-50 end-2 translate-middle-y text-muted">
               <FaSearch size={14} />
             </span>
           </div>
           <button type="button" className="btn btn-sm btn-primary d-flex align-items-center gap-1" onClick={handleShowModal}>
-            <FaPlus size={14} /> Thêm Design
+            <FaPlus size={14} /> Add New Design
           </button>
         </div>
       </div>
@@ -358,12 +358,12 @@ return (
           <table className="table table-hover">
             <thead>
               <tr>
-                <th style={{ width: "50px" }}></th>
-                <th>Hình ảnh</th>
-                <th>Tên Design</th>
+                <th style={{ width:"50px" }}></th>
+                <th>Image</th>
+                <th>Design Name</th>
                 <th>Trend Score</th>
-                <th>Đánh giá</th>
-                <th>Thao tác</th>
+                <th>Rating</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -419,15 +419,15 @@ return (
                     <tr>
                       <td colSpan="6">
                         <div className="p-3 bg-light">
-                          <h6 className="mb-3">Chi tiết Design</h6>
+                          <h6 className="mb-3">Design details</h6>
                           <div className="table-responsive">
                             <table className="table table-bordered table-sm">
                               <thead>
                                 <tr>
-                                  <th style={{ width: "100px" }}>Hình ảnh</th>
-                                  <th>Vị trí</th>
-                                  <th>Bên</th>
-                                  <th>Dịch vụ</th>
+                                  <th style={{ width: "100px" }}>Image</th>
+                                  <th>Position</th>
+                                  <th>Side</th>
+                                  <th>Service</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -454,8 +454,8 @@ return (
                                         <table className="table table-sm table-bordered mb-0">
                                           <thead>
                                             <tr>
-                                              <th>Tên dịch vụ</th>
-                                              <th>Giá</th>
+                                              <th>Service Name</th>
+                                              <th>Price</th>
                                             </tr>
                                           </thead>
                                           <tbody>

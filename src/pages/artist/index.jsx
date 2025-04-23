@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, InputGroup, Badge, Modal, Spinner, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, InputGroup, Badge, Modal, Spinner, ListGroup, Table, Image } from 'react-bootstrap';
 import { FaSearch, FaEdit, FaTrash, FaStar } from 'react-icons/fa';
 import axiosInstance from '@services/axiosConfig';
 import Pagination from '@components/Pagination';
@@ -358,60 +358,75 @@ const Artists = () => {
         </Col>
       </Row>
 
-      <Row>
-        {artists.map((artist) => (
-          <Col key={artist.ID} lg={3} md={4} sm={6} className="mb-4">
-            <Card className="h-100">
-              <Card.Img variant="top" src={artist.User?.ImageUrl} />
-              <Card.Body>
-                <Card.Title className="d-flex justify-content-between align-items-center">
-                  {artist.User?.FullName}
-                  <Badge bg={artist.User?.IsDeleted === false ? 'success' : 'warning'}>
-                    {artist.User?.IsDeleted === false ? 'Active' : 'Inactive'}
-                  </Badge>
-                </Card.Title>
-                <div className="card-details">
-                  <div className="mb-2">
-                    <strong>Services:</strong>
-                    <div className="mt-1">
-                      {artist.ArtistServices?.map((service) => (
-                        <Badge key={service.ServiceId} bg="info" className="me-1 mb-1">
-                          {service.Service?.Name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Experience:</strong> {artist.YearsOfExperience}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Level:</strong> {artist.Level}
-                  </div>
-                  <div className="mb-2">
-                    Rating: {artist.AverageRating} <FaStar className="text-warning" />
-                  </div>
-                </div>
-                <div className="d-flex justify-content-between mt-3">
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm"
-                    onClick={() => handleShowModal(artist)}
-                  >
-                    <FaEdit className="me-1" /> View Details
-                  </Button>
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm"
-                    onClick={() => handleShowDeleteModal(artist)}
-                  >
-                    <FaTrash className="me-1" /> {artist.User.IsDeleted === true? 'Active' : 'Deactive'}
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+   
+<Table responsive bordered hover>
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th>Full Name</th>
+      <th>Status</th>
+      <th>Services</th>
+      <th>Experience</th>
+      <th>Level</th>
+      <th>Rating</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {artists.map((artist) => (
+      <tr key={artist.ID}>
+        <td>
+          <Image
+            src={artist.User?.ImageUrl}
+            alt="Artist"
+            thumbnail
+            style={{ width: "80px", height: "80px", objectFit: "cover" }}
+          />
+        </td>
+        <td>{artist.User?.FullName}</td>
+        <td>
+          <Badge bg={artist.User?.IsDeleted === false ? "success" : "warning"}>
+            {artist.User?.IsDeleted === false ? "Active" : "Inactive"}
+          </Badge>
+        </td>
+        <td>
+          {artist.ArtistServices?.map((service) => (
+            <Badge
+              key={service.ServiceId}
+              bg="info"
+              className="me-1 mb-1"
+            >
+              {service.Service?.Name}
+            </Badge>
+          ))}
+        </td>
+        <td>{artist.YearsOfExperience}</td>
+        <td>{artist.Level}</td>
+        <td>
+          {artist.AverageRating} <FaStar className="text-warning" />
+        </td>
+        <td>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            className="me-1"
+            onClick={() => handleShowModal(artist)}
+          >
+            <FaEdit className="me-1" /> View Details
+          </Button>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => handleShowDeleteModal(artist)}
+          >
+            <FaTrash className="me-1" />{" "}
+            {artist.User?.IsDeleted === true ? "Active" : "Deactive"}
+          </Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
 
       <div className="d-flex justify-content-between align-items-center mt-4">
         <div className="text-muted">

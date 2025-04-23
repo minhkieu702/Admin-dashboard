@@ -11,10 +11,13 @@ import {
   Modal,
   Spinner,
   ListGroup,
+  Table,
+  Image
 } from "react-bootstrap";
 import { FaSearch, FaEdit, FaTrash, FaStar } from "react-icons/fa";
 import axiosInstance from "../services/axiosConfig";
 import Pagination from "../components/Pagination";
+
 
 const Services = () => {
   const pageSizeOptions = [8, 16, 24, 32];
@@ -308,81 +311,85 @@ const Services = () => {
         </Col>
       </Row>
 
-      <Row>
-        {services.map((service) => (
-          <Col key={service.ID} lg={3} md={4} sm={6} className="mb-4">
-            <Card className="h-100">
-              <Card.Img variant="top" src={service.ImageUrl} />
-              <Card.Body>
-                <Card.Title className="d-flex justify-content-between align-items-center">
-                  {service.FullName}
-                  <Badge
-                    bg={
-                      service.IsDeleted === false ? "success" : "warning"
-                    }
-                  >
-                    {service.IsDeleted === false ? "Active" : "Inactive"}
-                  </Badge>
-                </Card.Title>
-                <div className="card-details">
-                  
-                  <div className="mb-2">
-                  <div className="mb-2">
-                    <strong>Name:</strong>
-                    {service.Name}
-                  </div>
-                    <strong>CategoriesCategories:</strong>
-                    <div className="mt-1">
-                      {service.CategoryServices?.map((category, index) => (
-                        <Badge
-                          key={index}
-                          bg="info"
-                          className="me-1 mb-1"
-                          title={category.Data.Description}
-                        >
-                          {console.log(category)}
-                          {category.Data.Name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mb-2">
-                    <strong>Price:</strong>
-                    {new Intl.NumberFormat("vi-VN", {
-                              style: "currency",
-                              currency: "VND",
-                            }).format(service?.Price)}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Description:</strong> {service.Description}
-                  </div>
-                  <div className="mb-2">
-                    Rating: {service.AverageRating}{" "}
-                    <FaStar className="text-warning" />
-                  </div>
-                </div>
-                <div className="d-flex justify-content-between mt-3">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => handleShowModal(service)}
-                  >
-                    <FaEdit className="me-1" /> Edit
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => handleShowDeleteModal(service)}
-                  >
-                    <FaTrash className="me-1" />{" "}
-                    {service.IsDeleted === true ? "Active" : "Deactive"}
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+
+
+<Table responsive bordered hover>
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th>Status</th>
+      <th>Name</th>
+      <th>Categories</th>
+      <th>Price</th>
+      <th>Description</th>
+      <th>Rating</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {services.map((service) => (
+      <tr key={service.ID}>
+        <td>
+          <Image
+            src={service.ImageUrl}
+            alt={service.FullName}
+            thumbnail
+            style={{ width: "100px", height: "100px", objectFit: "contain" }}
+          />
+        </td>
+      
+        <td>
+          <Badge bg={service.IsDeleted === false ? "success" : "warning"}>
+            {service.IsDeleted === false ? "Active" : "Inactive"}
+          </Badge>
+        </td>
+        <td>{service.Name}</td>
+        <td>
+          {service.CategoryServices?.map((category, index) => (
+            <Badge
+              key={index}
+              bg="info"
+              className="me-1 mb-1"
+              title={category.Data.Description}
+            >
+              {category.Data.Name}
+            </Badge>
+          ))}
+        </td>
+        <td>
+          {new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(service?.Price)}
+        </td>
+        <td>{service.Description}</td>
+        <td>
+          {service.AverageRating} <FaStar className="text-warning" />
+        </td>
+        <td>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            className="me-1"
+            onClick={() => handleShowModal(service)}
+          >
+            <FaEdit className="me-1" /> Edit
+          </Button>
+          <Button
+            variant="outline-danger"
+            size="sm"
+            onClick={() => handleShowDeleteModal(service)}
+          >
+            <FaTrash className="me-1" />{" "}
+            {service.IsDeleted === true ? "Active" : "Deactive"}
+          </Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</Table>
+
+
 
       <div className="d-flex justify-content-between align-items-center mt-4">
         <div className="text-muted">
