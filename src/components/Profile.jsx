@@ -446,10 +446,10 @@ const Profile = () => {
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Họ ttên</Form.Label>
+              <Form.Label>Họ tên</Form.Label>
               <Form.Control
                 type="text"
-                name="FullNameFullName"
+                name="FullName"
                 value={formData.FullName}
                 onChange={handleInputChange}
                 required
@@ -469,24 +469,12 @@ const Profile = () => {
               <Form.Control type="date" name="DateOfBirth" value={formData.DateOfBirth} onChange={handleInputChange} required disabled={isSubmitting} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Số năm kinh nghiệm</Form.Label>
-              <Form.Control type="number" name="YearsOfExperience" value={formData.YearsOfExperience} onChange={handleInputChange} min="0" required disabled={isSubmitting} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Cấp độ</Form.Label>
-              <Form.Select name="Level" value={formData.Level} onChange={handleInputChange} required disabled={isSubmitting}>
-                <option value={1}>Beginner</option>
-                <option value={2}>Intermediate</option>
-                <option value={3}>Expert</option>
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3">
               <Form.Label>Hình ảnh</Form.Label>
               <Form.Control type="file" onChange={handleImageChange} accept="image/*" disabled={isSubmitting} />
               {formData.ImageUrl && !formData.NewImage && <img src={formData.ImageUrl} alt="Current" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Dịch vụ</Form.Label>
+              <Form.Label>Professional Service</Form.Label>
               <div style={{ maxHeight: "200px", overflowY: "auto" }}>
                 <ListGroup>
                   {services.map((service) => (
@@ -507,6 +495,89 @@ const Profile = () => {
 
             <Form.Group className="mb-3">
               <Form.Label>Lịch làm việc</Form.Label>
+              <Button 
+                variant="outline-primary" 
+                className="mb-3" 
+                onClick={handleAddArtistStoreForm}
+                disabled={isSubmitting}
+              >
+                Thêm lịch làm việc
+              </Button>
+              {artistStoreForms.map((form) => (
+                <div key={form.id} className="border p-3 mb-3 rounded">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Lịch làm việc mới</h6>
+                    <Button 
+                      variant="outline-danger" 
+                      size="sm"
+                      onClick={() => handleRemoveArtistStoreForm(form.id)}
+                      disabled={isSubmitting}
+                    >
+                      Xóa
+                    </Button>
+                  </div>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Cửa hàng</Form.Label>
+                    <Form.Select
+                      value={form.StoreId}
+                      onChange={(e) => handleArtistStoreFormChange(form.id, "StoreId", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    >
+                      <option value="">Chọn cửa hàng</option>
+                      {stores.map((store) => (
+                        <option key={store.ID} value={store.ID}>
+                          {store.Address}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Ngày làm việc</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={form.WorkingDate}
+                      onChange={(e) => handleArtistStoreFormChange(form.id, "WorkingDate", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Giờ bắt đầu</Form.Label>
+                    <Form.Control
+                      type="time"
+                      value={form.StartTime}
+                      onChange={(e) => handleArtistStoreFormChange(form.id, "StartTime", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Giờ kết thúc</Form.Label>
+                    <Form.Control
+                      type="time"
+                      value={form.EndTime}
+                      onChange={(e) => handleArtistStoreFormChange(form.id, "EndTime", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Thời gian giải lao</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={form.BreakTime}
+                      onChange={(e) => handleArtistStoreFormChange(form.id, "BreakTime", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </Form.Group>
+                </div>
+              ))}
+            </Form.Group>
+          
+            <Form.Group className="mb-3">
+              <Form.Label>Certificate</Form.Label>
               <Button 
                 variant="outline-primary" 
                 className="mb-3" 

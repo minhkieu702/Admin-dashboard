@@ -6,13 +6,17 @@ import { vi } from 'date-fns/locale';
 import axiosInstance from '../services/axiosConfig';
 import { getId } from '../services/helper';
 import signalRService from '../services/signalR';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
     const [notifications, setNotifications] = useState([]);
     const [count, setCount] = useState(0);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState({ title: '', message: '' });
-    
+    const navigate = useNavigate();
+    const viewBookingDetails = (href) => {
+        navigate(href);
+    };
     useEffect(() => {
         fetchNotification();
         
