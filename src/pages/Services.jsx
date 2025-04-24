@@ -14,7 +14,7 @@ import {
   Table,
   Image
 } from "react-bootstrap";
-import { FaSearch, FaEdit, FaTrash, FaStar } from "react-icons/fa";
+import { FaSearch, FaEdit, FaTrash, FaStar, FaEllipsisV } from "react-icons/fa";
 import axiosInstance from "../services/axiosConfig";
 import Pagination from "../components/Pagination";
 

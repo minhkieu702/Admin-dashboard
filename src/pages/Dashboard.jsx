@@ -37,7 +37,7 @@ const Dashboard = () => {
   }
   if (getRole() == 2) {
     return(
-      <Bookings/>
+      <Analytics/>
     )
   }
 };

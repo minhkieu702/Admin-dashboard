@@ -5,6 +5,7 @@ import axiosInstance from '../services/axiosConfig';
 
 const Designs = () => {
   const [designs, setDesigns] = useState([]);
+  console.log("designs", designs);
 const [expandedDesigns, setExpandedDesigns] = useState(new Set());
 const [designDetails, setDesignDetails] = useState({});
 const [showModal, setShowModal] = useState(false);
@@ -26,12 +27,13 @@ const [occasions, setOccasions] = useState([]);
 const [skintones, setSkintones] = useState([]);
 const [paintTypes, setPaintTypes] = useState([]);
 const [services, setServices] = useState([]);
+const [editingDesign, setEditingDesign] = useState(null);
 
 useEffect(() => {
   const getDesigns = async () => {
     setIsLoading(true);
     try {
-      const res = await axiosInstance.get(`/odata/design?$select=id,name,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
+      const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
       const designs = res.value || [];
       setDesigns(designs);
     } catch (error) {
@@ -69,6 +71,7 @@ const handleShowModal = () => {
 
 const handleCloseModal = () => {
   setShowModal(false);
+  setEditingDesign(null);
   setFormData({
     Name: "",
     TrendScore: 0,
@@ -168,6 +171,21 @@ const removeNailDesign = (index) => {
   }));
 };
 
+const handleEditClick = async (design) => {
+  setEditingDesign(design);
+  setIsLoading(true);
+  try {
+    await getDesignDetails(design.ID);
+    console.log("designDetails", designDetails);
+    setShowModal(true);
+  } catch (error) {
+    console.error("Error loading design details:", error);
+    alert("Không thể tải thông tin design. Vui lòng thử lại sau.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   
@@ -185,12 +203,6 @@ const handleSubmit = async (e) => {
     alert("Vui lòng nhập mô tả");
     return;
   }
-
-  // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  // if (!emailRegex.test(formData.Email)) {
-  //   alert("Email không hợp lệ");
-  //   return;
-  // }
 
   setIsSubmitting(true);
   try {
@@ -217,12 +229,16 @@ const handleSubmit = async (e) => {
     });
 
     formData.medias.forEach((media, index) => {
-      formDataToSend.append(`medias[${index}].newImage`, media.newImage);
+      if (media.newImage) {
+        formDataToSend.append(`medias[${index}].newImage`, media.newImage);
+      }
       formDataToSend.append(`medias[${index}].numerialOrder`, media.numerialOrder);
     });
 
     formData.nailDesigns.forEach((design, index) => {
-      formDataToSend.append(`nailDesigns[${index}].newImage`, design.newImage);
+      if (design.newImage) {
+        formDataToSend.append(`nailDesigns[${index}].newImage`, design.newImage);
+      }
       formDataToSend.append(`nailDesigns[${index}].imageUrl`, design.imageUrl);
       formDataToSend.append(`nailDesigns[${index}].nailPosition`, design.nailPosition);
       formDataToSend.append(`nailDesigns[${index}].isLeft`, design.isLeft);
@@ -233,17 +249,25 @@ const handleSubmit = async (e) => {
       });
     });
 
-    await axiosInstance.post("/api/Design", formDataToSend, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
+    if (editingDesign) {
+      await axiosInstance.put(`/api/Design/${editingDesign.ID}`, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+    } else {
+      await axiosInstance.post("/api/Design", formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+    }
 
     handleCloseModal();
-    const res = await axiosInstance.get(`/odata/design?$select=id,name,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
+    const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
     setDesigns(res.value);
   } catch (error) {
-    console.error("Error creating design:", error);
+    console.error("Error saving design:", error);
     if (error.response?.data?.errors) {
       console.error("Validation errors:", error.response.data.errors);
     }
@@ -255,8 +279,9 @@ const handleSubmit = async (e) => {
 const getDesignDetails = async (id) => {
   setIsLoading(true);
   try {
-    const designRes = await axiosInstance.get(`/odata/design?$filter=id eq ${id}&$select=id,name,description,trendscore&$expand=medias($select=numerialOrder,imageUrl,mediatype),preferences,nailDesigns($select=id,imageUrl,nailposition,isleft)`);
+    const designRes = await axiosInstance.get(`/odata/design?$filter=id eq ${id}&$select=id,name,description,trendscore&$expand=medias($select=numerialOrder,imageUrl,mediatype),nailDesigns($select=id,imageUrl,nailposition,isleft),preferences`);
     const design = designRes.value[0];
+   
 
     const nailDesignServiceRequests = design.NailDesigns.map((NailDesign) => axiosInstance.get(`/odata/NailDesignService?$filter=nailDesignId eq ${NailDesign.ID}&$select=id,serviceId`));
     const nailDesignServicesRes = await Promise.all(nailDesignServiceRequests);
@@ -288,6 +313,7 @@ const getDesignDetails = async (id) => {
         NailDesigns: nailDesignsWithServices
       }
     }));
+    console.log("aaaaaaa", design);
   } catch (error) {
     console.error("Error fetching design details:", error);
     alert("Không thể tải thông tin design. Vui lòng thử lại sau.");
@@ -320,6 +346,42 @@ useEffect(() => {
     });
   };
 }, [formData.medias]);
+
+// Thêm useEffect để theo dõi designDetails
+useEffect(() => {
+  if (editingDesign && designDetails[editingDesign.ID]) {
+    const designDetail = designDetails[editingDesign.ID];
+    
+    // Lọc Preferences theo type và lấy Data
+    const colors = designDetail.Preferences?.filter(p => p.PreferenceType === 0).map(p => p.Data) || [];
+    const occasions = designDetail.Preferences?.filter(p => p.PreferenceType === 1).map(p => p.Data) || [];
+    const paintTypes = designDetail.Preferences?.filter(p => p.PreferenceType === 2).map(p => p.Data) || [];
+    const skintones = designDetail.Preferences?.filter(p => p.PreferenceType === 3).map(p => p.Data) || [];
+
+    setFormData({
+      Name: designDetail.Name,
+      TrendScore: designDetail.TrendScore,
+      Description: designDetail.Description,
+      ColorIds: colors.map(c => c.ID),
+      OccasionIds: occasions.map(o => o.ID),
+      SkintoneIds: skintones.map(s => s.ID),
+      PaintTypeIds: paintTypes.map(p => p.ID),
+      medias: designDetail.Medias?.map(m => ({
+        imageUrl: m.ImageUrl,
+        numerialOrder: m.NumerialOrder
+      })) || [],
+      nailDesigns: designDetail.NailDesigns?.map(nd => ({
+        imageUrl: nd.ImageUrl,
+        nailPosition: nd.NailPosition,
+        isLeft: nd.IsLeft,
+        nailDesignServices: nd.nailDesignServices?.map(nds => ({
+          serviceId: nds.ServiceId,
+          extraPrice: nds.ExtraPrice
+        })) || []
+      })) || []
+    });
+  }
+}, [designDetails, editingDesign]);
 
 return (
   <>
@@ -361,6 +423,7 @@ return (
                 <th style={{ width:"50px" }}></th>
                 <th>Image</th>
                 <th>Design Name</th>
+                <th>Description</th>
                 <th>Trend Score</th>
                 <th>Rating</th>
                 <th>Action</th>
@@ -384,6 +447,7 @@ return (
                       />
                     </td>
                     <td>{design.Name}</td>
+                    <td>{design.Description}</td>
                     <td>
                       <div className="d-flex align-items-center">
                         <FaFire className="text-danger me-1" />
@@ -402,6 +466,7 @@ return (
                           className="btn btn-sm btn-outline-primary"
                           title="Chỉnh sửa"
                           aria-label="Chỉnh sửa"
+                          onClick={() => handleEditClick(design)}
                         >
                           <FaPencilAlt size={14} />
                         </button>
@@ -488,7 +553,7 @@ return (
 
     <Modal show={showModal} onHide={handleCloseModal} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Thêm Design mới</Modal.Title>
+        <Modal.Title>{editingDesign ? 'Chỉnh sửa Design' : 'Thêm Design mới'}</Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>

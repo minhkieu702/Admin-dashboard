@@ -12,6 +12,7 @@ import {
   Toast,
   ToastContainer,
   ButtonGroup,
+  Spinner,
 } from "react-bootstrap";
 import {
   FaEdit,
@@ -40,35 +41,55 @@ const Bookings = () => {
   const [status, setStatus] = useState(-2);
   const [method, setMethod] = useState(0);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState([]);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
 
   const payOnline = async (formDataToSend) => {
-    for (let pair of formDataToSend.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
-    const response = await axiosInstance.post(
-      `/api/Payment/PayOSUrl`,
-      formDataToSend,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+    setIsPaymentLoading(true);
+    try {
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
       }
-    );
+      const response = await axiosInstance.post(
+        `/api/Payment/PayOSUrl`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-    if (response) {
-      window.location.href = response;
+      if (response) {
+        window.location.href = response;
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
 
   const payOffline = async (formDataToSend) => {
-    await axiosInstance.post(`/api/Payment/PaymentForCash`, formDataToSend, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    setIsPaymentLoading(true);
+    try {
+      await axiosInstance.post(`/api/Payment/PaymentForCash`, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      alert("Payment successful!");
+      setSelectedBookings([]);
+      fetchBookings();
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed. Please try again.");
+    } finally {
+      setIsPaymentLoading(false);
+    }
   };
 
   const handleSelectedBooking = (bookingId) => {
@@ -92,6 +113,7 @@ const Bookings = () => {
   };
 
   const fetchBookings = async () => {
+    setIsLoading(true);
     try {
       const skip = currentPage * pageSize;
       const id = getId();
@@ -101,7 +123,6 @@ const Bookings = () => {
       const filter = role == 1 ? `artistStore/artistId eq ${id}` : "";
       const filterStatus = status == -2 ? "" : `status eq ${status}`;
 
-      // Xử lý filter ngày theo yêu cầu
       let dateFilter = "";
       if (fromDate && toDate) {
         dateFilter = `(serviceDate ge ${fromDate} and serviceDate le ${toDate})`;
@@ -111,7 +132,6 @@ const Bookings = () => {
         dateFilter = `serviceDate le ${toDate}`;
       }
 
-      // Kết hợp tất cả các filter
       const combinedFilter = [filter, filterStatus, dateFilter]
         .filter(Boolean)
         .join(" and ");
@@ -131,12 +151,12 @@ const Bookings = () => {
       const totalCount = response["@odata.count"] ?? 0;
       setTotalPages(Math.ceil(totalCount / pageSize));
       setTotalCount(totalCount);
-      console.log("Booking data:", response.value);
-
       setBookings(response.value);
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      // Có thể thêm xử lý lỗi ở đây (ví dụ: hiển thị thông báo cho người dùng)
+      alert("Failed to load bookings. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -165,7 +185,7 @@ const Bookings = () => {
       </div>
 
       <Card className="mb-4">
-        <Card.Header>
+        <Card.Header className="bg-white">
           <div className="d-flex align-items-center">
             <FaFilter className="text-primary me-2" />
             <h5 className="mb-0">Filters</h5>
@@ -173,51 +193,33 @@ const Bookings = () => {
         </Card.Header>
         <Card.Body>
           <Row>
-            {/* <Col md={3}>
-              <Form.Group className="mb-3 mb-md-0">
-                <Form.Label>Artist</Form.Label>
-                <Form.Select>
-                  <option>All Artists</option>
-                  <option value="1">Jenny Thompson</option>
-                  <option value="2">Lisa Wang</option>
-                  <option value="3">Maria Garcia</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
             <Col md={3}>
-              <Form.Group className="mb-3 mb-md-0">
-                <Form.Label>Service</Form.Label>
-                <Form.Select>
-                  <option>All Services</option>
-                  <option value="Manicure">Manicure</option>
-                  <option value="Pedicure">Pedicure</option>
-                  <option value="Nail Art">Nail Art</option>
-                  <option value="Acrylic">Acrylic</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>*/}
-            <Col md={3}>
-              <Form.Group className="mb-3 mb-md-0">
-                <Form.Label>From</Form.Label>
+              <Form.Group className="mb-3">
+                <Form.Label>From Date</Form.Label>
                 <Form.Control
                   type="date"
                   onChange={(e) => setFromDate(e.target.value)}
+                  className="form-control-lg"
                 />
               </Form.Group>
             </Col>
             <Col md={3}>
-              <Form.Group className="mb-3 mb-md-0">
-                <Form.Label>To</Form.Label>
+              <Form.Group className="mb-3">
+                <Form.Label>To Date</Form.Label>
                 <Form.Control
                   type="date"
                   onChange={(e) => setToDate(e.target.value)}
+                  className="form-control-lg"
                 />
               </Form.Group>
             </Col>
             <Col md={3}>
-              <Form.Group>
+              <Form.Group className="mb-3">
                 <Form.Label>Status</Form.Label>
-                <Form.Select onChange={(e) => setStatus(e.target.value)}>
+                <Form.Select 
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="form-select-lg"
+                >
                   <option value="-2">All Status</option>
                   <option value="-1">Cancelled</option>
                   <option value="0">Waiting</option>
@@ -227,46 +229,22 @@ const Bookings = () => {
                 </Form.Select>
               </Form.Group>
             </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      {
-        selectedBookings && selectedBookings.length > 0 && (
-          <Card className="mb-4">
-        <Card.Header>
-          <div className="d-flex align-items-center">
-            <h5 className="mb-0">Payment</h5>
-          </div>
-        </Card.Header>
-        <Card.Body>
-          <h6 className="text-uppercase mb-3 text-muted">Payment</h6>
-          <Row className="g-3">
-            <Col md={8}>
-              <Form.Group>
-                <Form.Label className="small text-muted">
-                  Select Payment Method
-                </Form.Label>
-                <Form.Select
-                  onChange={(e) => setMethod(parseInt(e.target.value))}
-                  className="form-select-lg"
-                >
-                  <option value="0">Online Banking</option>
-                  <option value="1">Cash Payment</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={4} className="d-flex align-items-end">
-              <Button className="w-100 py-3" onClick={() => handlePayment()}>
-                {method === 0 ? (
+            <Col md={3} className="d-flex align-items-end">
+              <Button 
+                variant="primary" 
+                className="w-100"
+                onClick={fetchBookings}
+                disabled={isLoading}
+              >
+                {isLoading ? (
                   <>
-                    <FaCreditCard className="me-2" />
-                    Pay Online
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                    Loading...
                   </>
                 ) : (
                   <>
-                    <FaMoneyBillWave className="me-2" />
-                    Pay Cash
+                    <FaFilter className="me-2" />
+                    Apply Filters
                   </>
                 )}
               </Button>
@@ -274,162 +252,190 @@ const Bookings = () => {
           </Row>
         </Card.Body>
       </Card>
-        )
-      }
+
+      {selectedBookings && selectedBookings.length > 0 && (
+        <Card className="mb-4">
+          <Card.Header className="bg-white">
+            <div className="d-flex align-items-center">
+              <h5 className="mb-0">Payment</h5>
+            </div>
+          </Card.Header>
+          <Card.Body>
+            <Row className="g-3">
+              <Col md={8}>
+                <Form.Group>
+                  <Form.Label className="small text-muted">
+                    Select Payment Method
+                  </Form.Label>
+                  <Form.Select
+                    onChange={(e) => setMethod(parseInt(e.target.value))}
+                    className="form-select-lg"
+                    disabled={isPaymentLoading}
+                  >
+                    <option value="0">Online Banking</option>
+                    <option value="1">Cash Payment</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4} className="d-flex align-items-end">
+                <Button 
+                  className="w-100 py-3" 
+                  onClick={handlePayment}
+                  disabled={isPaymentLoading}
+                >
+                  {isPaymentLoading ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                      Processing...
+                    </>
+                  ) : method === 0 ? (
+                    <>
+                      <FaCreditCard className="me-2" />
+                      Pay Online
+                    </>
+                  ) : (
+                    <>
+                      <FaMoneyBillWave className="me-2" />
+                      Pay Cash
+                    </>
+                  )}
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      )}
 
       <Card>
         <Card.Body className="p-0">
-          <Table responsive hover className="align-middle">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Client</th>
-                <th>Phone number</th>
-                <th>Artist</th>
-                <th>Address</th>
-                <th>Time</th>
-                <th>End Time Prediction</th>
-                <th>Working Date</th>
-                <th>Price</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking) => (
-                <tr
-                  key={booking.ID}
-                  onDoubleClick={() => viewBookingDetails(booking.ID)}
-                >
-                  <td>
-                    {booking.Status == 2 ? (
-                      <Form.Check
-                        type="checkbox"
-                        id={booking.ID}
-                        onChange={() => handleSelectedBooking(booking.ID)}
-                        checked={selectedBookings.includes(booking.ID)}
-                      />
-                    ) : (
-                      <></>
-                    )}
-                  </td>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <div className="me-3">
-                        <div className="avatar-circle bg-primary-soft">
+          {isLoading ? (
+            <div className="d-flex justify-content-center align-items-center p-5">
+              <Spinner animation="border" role="status" variant="primary">
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+            </div>
+          ) : (
+            <Table responsive hover className="align-middle">
+              <thead className="bg-light">
+                <tr>
+                  <th style={{ width: "50px" }}></th>
+                  <th>Client</th>
+                  <th>Phone</th>
+                  <th>Artist</th>
+                  <th>Address</th>
+                  <th>Time</th>
+                  <th>End Time</th>
+                  <th>Date</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((booking) => (
+                  <tr
+                    key={booking.ID}
+                    onDoubleClick={() => viewBookingDetails(booking.ID)}
+                    className="cursor-pointer"
+                  >
+                    <td>
+                      {booking.Status == 2 && (
+                        <Form.Check
+                          type="checkbox"
+                          id={booking.ID}
+                          onChange={() => handleSelectedBooking(booking.ID)}
+                          checked={selectedBookings.includes(booking.ID)}
+                        />
+                      )}
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center">
+                        <div className="avatar-circle bg-primary-soft me-3">
                           <FaUser className="text-primary" />
                         </div>
-                      </div>
-                      <div>
                         <div className="fw-medium">
                           {booking.CustomerSelected.Customer.User.FullName}
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.CustomerSelected.Customer.User.PhoneNumber}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.CustomerSelected.Customer.User.PhoneNumber}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.ArtistStore.Artist.User.FullName}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.ArtistStore.Artist.User.FullName}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.ArtistStore.Store.Address}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.ArtistStore.Store.Address}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.StartTime.slice(0, 8)}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.StartTime.slice(0, 8)}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.PredictEndTime.slice(0, 8)}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.PredictEndTime.slice(0, 8)}
                       </div>
-                    </div>
-                  </td>
-                  <td style={{ width: "180px" }}>
-                    <div className="d-flex align-items-center">
-                      <div>
-                        <div className="fw-medium">
-                          {booking.ArtistStore.WorkingDate}
-                        </div>
+                    </td>
+                    <td>
+                      <div className="fw-medium">
+                        {booking.ArtistStore.WorkingDate}
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="fw-medium">
-                      <span className="fw-medium">
+                    </td>
+                    <td>
+                      <div className="fw-medium text-primary">
                         {new Intl.NumberFormat("vi-VN", {
                           style: "currency",
                           currency: "VND",
                         }).format(booking.TotalAmount)}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge
-                      bg={
-                        booking.Status === -1
-                          ? "danger"
+                      </div>
+                    </td>
+                    <td>
+                      <Badge
+                        bg={
+                          booking.Status === -1
+                            ? "danger"
+                            : booking.Status === 0
+                            ? "info"
+                            : booking.Status === 1
+                            ? "primary"
+                            : booking.Status === 2
+                            ? "warning"
+                            : booking.Status === 3
+                            ? "success"
+                            : "secondary"
+                        }
+                        className="badge-soft"
+                      >
+                        {booking.Status === -1
+                          ? "Canceled"
                           : booking.Status === 0
-                          ? "info"
+                          ? "Waiting"
                           : booking.Status === 1
-                          ? "primary"
+                          ? "Confirmed"
                           : booking.Status === 2
-                          ? "warning"
+                          ? "Serving"
                           : booking.Status === 3
-                          ? "success"
-                          : "secondary"
-                      }
-                      className="badge-soft"
-                    >
-                      {booking.Status === -1
-                        ? "Canceled"
-                        : booking.Status === 0
-                        ? "Waiting"
-                        : booking.Status === 1
-                        ? "Confirmed"
-                        : booking.Status === 2
-                        ? "Serving"
-                        : booking.Status === 3
-                        ? "Completed"
-                        : "No Info"}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                          ? "Completed"
+                          : "No Info"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
         </Card.Body>
       </Card>
 
       <div className="d-flex justify-content-between align-items-center mt-4">
         <div className="text-muted">
-          Showing {bookings.length} of {totalCount} artists
+          Showing {bookings.length} of {totalCount} bookings
         </div>
         <Pagination
           currentPage={currentPage}
@@ -440,4 +446,5 @@ const Bookings = () => {
     </Container>
   );
 };
+
 export default Bookings;

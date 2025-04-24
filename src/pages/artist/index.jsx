@@ -415,7 +415,8 @@ const Artists = () => {
             <FaEdit className="me-1" /> View Details
           </Button>
           <Button
-            variant="outline-danger"
+          
+            variant={artist.User?.IsDeleted === true ? "outline-success" : "outline-danger"}
             size="sm"
             onClick={() => handleShowDeleteModal(artist)}
           >
@@ -440,25 +441,38 @@ const Artists = () => {
       </div>
       
       {
-        (selectedArtist?.User !== undefined && selectedArtist?.User !== null) && (
-          <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to {selectedArtist.User?.IsDeleted === true? 'active' : 'deactive'} {selectedArtist.User?.FullName}? Customer can {selectedArtist.User?.IsDeleted === true? '' : 'not'} see this artist.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseDeleteModal}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={deleteArtist}>
-          {selectedArtist.User.IsDeleted === true? 'Active' : 'Deactive'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-        )
-      }
+  selectedArtist?.User && (
+    <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
+      <Modal.Header closeButton>
+        <Modal.Title>
+          {selectedArtist.User.IsDeleted ? 'Confirm Reactivate' : 'Confirm Deactivate'}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {selectedArtist.User.IsDeleted ? (
+          <>
+            Are you sure you want to <strong>reactivate</strong> <strong>{selectedArtist.User.FullName}</strong>?<br />
+            Customers will be able to see and book this artist again.
+          </>
+        ) : (
+          <>
+            Are you sure you want to <strong>deactivate</strong> <strong>{selectedArtist.User.FullName}</strong>?<br />
+            This artist will be hidden from customers.
+          </>
+        )}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleCloseDeleteModal}>
+          Cancel
+        </Button>
+        <Button  variant={selectedArtist.User.IsDeleted ? 'success' : 'danger'} onClick={deleteArtist}>
+          {selectedArtist.User.IsDeleted ? 'Reactivate' : 'Deactivate'}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  )
+}
+
     </Container>
   );
 };
