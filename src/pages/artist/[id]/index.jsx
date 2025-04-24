@@ -162,7 +162,7 @@ const ArtistDetail = () => {
       const filter = `$filter=id eq ${id.substring(id.indexOf(":") + 1)}`;
       const selectArtist = `&$select=id,username,yearsOfExperience,level,averageRating`;
       const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth)`;
-      const expandArtistStore = `,artistStores($select=storeId,workingDate,startTime,endTime,breakTime,status;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
+      const expandArtistStore = `,artistStores($select=id,storeId,workingDate,startTime,endTime,breakTime,status;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
 
       const res = await axiosInstance.get(
