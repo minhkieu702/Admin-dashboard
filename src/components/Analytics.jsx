@@ -56,7 +56,6 @@ payment.forEach(order => {
       monthlyRevenueMap[month] = 0;
     }
     monthlyRevenueMap[month] += order.TotalAmount
-    console.log("mmmmmmm", monthlyRevenueMap)
   }
 });
 const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -158,7 +157,6 @@ setDesign(res.value)
     const getPayment = async ()=>{
       const res = await axiosInstance.get(`/odata/Payment?$select=status,id,totalamount,createdAt`)
       setPayment(res.value)
-      console.log("bbbbbb",res.value)
     }
     getPayment()
   },[])

@@ -120,29 +120,41 @@ const BookingDetail = () => {
   };
 
   const fetchNailDesignServiceSelecteds = async (customerSelectedId) => {
-    const response = await axiosInstance.get(
-      `/odata/nailDesignServiceSelected?$filter=customerSelectedId eq ${customerSelectedId}&$select=nailDesignServiceId`
-    );
-    const nailDesignServiceSelecteds = response.value ?? [];
-
-    const nailDesignServicePromises = nailDesignServiceSelecteds.map(
-      async (c) => {
-        c.NailDesignService = await fetchNailDesignService(
-          c.NailDesignServiceId
-        );
-        return c;
-      }
-    );
-
-    return await Promise.all(nailDesignServicePromises);
+    try {
+      const response = await axiosInstance.get(
+        `/odata/nailDesignServiceSelected?$filter=customerSelectedId eq ${customerSelectedId}&$select=nailDesignServiceId`
+      );
+      
+      const nailDesignServiceSelecteds = response.value || [];
+  
+      const nailDesignServicePromises = nailDesignServiceSelecteds.map(
+        async (serviceSelected) => {
+          const service = await fetchNailDesignService(
+            serviceSelected.NailDesignServiceId
+          );
+          
+          return {
+            ...serviceSelected,
+            NailDesignService: service
+          };
+        }
+      );
+  const task = await Promise.all(nailDesignServicePromises)
+  console.log(task);
+  
+      return task;
+    } catch (error) {
+      console.error('Error fetching nail design services:', error);
+      throw error; // Hoặc return [] tùy logic của bạn
+    }
   };
 
   const fetchNailDesignService = async (nailDesignServiceId) => {
+    console.log(`/odata/nailDesignService?$filter=id eq ${nailDesignServiceId}&$select=id,nailDesignId,serviceId&$expand=nailDesign($select=id,isLeft,nailPosition;$expand=design($select=id,name,trendScore,description,averagerating))`)
     const response = await axiosInstance.get(
-      `/odata/nailDesignService?$filter=id eq ${nailDesignServiceId}&$select=id,nailDesignId,serviceId,extraPrice&$expand=nailDesign($select=id,isLeft,nailPosition;$expand=design($select=id,name,trendScore,description,averagerating))`
+      `/odata/nailDesignService?$filter=id eq ${nailDesignServiceId}&$select=id,nailDesignId,serviceId&$expand=nailDesign($select=id,isLeft,nailPosition;$expand=design($select=id,name,trendScore,description,averagerating))`
     );
     const nailDesignService = response.value?.[0];
-    if (!nailDesignService) return null;
 
     const [service, feedback] = await Promise.all([fetchService(nailDesignService.ServiceId), fetchFeedback(nailDesignService.NailDesign.Design.ID)])
     nailDesignService.Status = -1;
@@ -392,7 +404,9 @@ const BookingDetail = () => {
               </Card.Body>
             </Card>
 
-            <Card>
+            {
+              booking?.CustomerSelected?.NailDesignServiceSelecteds != null && (
+                <Card>
               <Card.Header>
                 <h5 className="mb-0">Services</h5>
               </Card.Header>
@@ -410,6 +424,8 @@ const BookingDetail = () => {
                   <tbody>
                     {booking.CustomerSelected?.NailDesignServiceSelecteds?.map(
                       (service, index, array) => {
+                        console.log(service);
+                        
                         const isLastOfDesign = index === array.length - 1 || 
                           array[index + 1].NailDesignService.NailDesign.Design.ID !== 
                           service.NailDesignService.NailDesign.Design.ID;
@@ -538,6 +554,8 @@ const BookingDetail = () => {
                 </Table>
               </Card.Body>
             </Card>
+              )
+            }
 
             {booking?.Status == 2 || (booking?.CustomerSelected?.NailDesignServiceSelecteds?.every(
               (c) => c.NailDesignService.Status === 1

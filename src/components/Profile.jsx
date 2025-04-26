@@ -103,9 +103,7 @@ const Profile = () => {
     });
 
     // Add existing artist services to selectedServices
-    artist.ArtistServices.map(service => {
-        console.log(service.Service.IsDeleted);
-        
+    artist.ArtistServices.map(service => {        
         if (service.Service.IsDeleted === false) {
             handleSelectService(service.ServiceId)
         }
@@ -179,12 +177,6 @@ const Profile = () => {
   
   const updateArtist = async (id, formDataToSend) => {
     try {
-      // Log all values in FormData
-      console.log("FormData contents:");
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-      }
-        
       await axiosInstance.put(`/api/Artist?id=${id}`, formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -201,8 +193,6 @@ const Profile = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      console.log("Submitting with selectedServices:", selectedServices);
-      console.log("Submitting with artistStoreForms:", artistStoreForms);
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
         if (formData[key] !== null) {
