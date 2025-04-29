@@ -481,6 +481,7 @@ await fetchArtist()
                       <th>Break Time</th>
                       <th>Address</th>
                       <th>Store Description</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -496,6 +497,20 @@ await fetchArtist()
                         <td>{store.BreakTime}</td>
                         <td>{store.Store.Address}</td>
                         <td>{store.Store.Description}</td>
+                        <td>
+                          {store.Status === 0 ? (
+                            <>
+                              <Button
+                               onClick={() => handleUpdateArtistStoreStatus(store.ID, -1)}
+                              >Rejected</Button>
+                              <Button
+                              onClick={() => handleUpdateArtistStoreStatus(store.ID, 1)}
+                              >Accept</Button>
+                            </>
+                          ) : (
+                            getArtistStoreStatus[store.Status]
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
