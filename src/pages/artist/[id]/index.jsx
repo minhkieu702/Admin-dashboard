@@ -164,9 +164,9 @@ const ArtistDetail = () => {
       const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth)`;
       const expandArtistStore = `,artistStores($select=id,storeId,workingDate,startTime,endTime,breakTime,status;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
-
+      const expandArtistCertificate = `,certificates($select=Id,ArtistId,NumerialOrder,Title,Description,ImageUrl)`
       const res = await axiosInstance.get(
-        `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}`
+        `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}${expandArtistCertificate}`
       );
 
       
@@ -364,7 +364,7 @@ await fetchArtist()
                   <h2 className="mb-1">{artist.User.FullName}</h2>
                   <p className="text-muted mb-1">Level: {artist.Level}</p>
                   <p className="text-muted">
-                    Kinh nghiệm: {artist.YearsOfExperience} năm
+                  Years Of Experience: {artist.YearsOfExperience}
                   </p>
                   {artist.AverageRating && (
                     <p className="text-muted">
@@ -379,11 +379,11 @@ await fetchArtist()
       </div>
 
       <div className="row">
-        <div className="col-md-12 mb-4">
+      <div className="col-md-12 mb-4">
           <div className="card">
             <div className="card-body">
               <h4 className="card-title border-bottom pb-3">
-                Thông tin cá nhân
+                Personal Information
               </h4>
               <div className="row">
                 <div className="col-md-4">
@@ -394,16 +394,16 @@ await fetchArtist()
                 </div>
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <strong className="text-muted">Số điện thoại:</strong>
+                    <strong className="text-muted">Phone Number:</strong>
                     <p className="mb-0">{artist.User.PhoneNumber}</p>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <strong className="text-muted">Ngày sinh:</strong>
+                    <strong className="text-muted">Date of Birth:</strong>
                     <p className="mb-0">
                       {new Date(artist.User.DateOfBirth).toLocaleDateString(
-                        "vi-VN"
+                        "en-US"
                       )}
                     </p>
                   </div>
@@ -417,41 +417,70 @@ await fetchArtist()
           <div className="card">
             <div className="card-body">
               <h4 className="card-title border-bottom pb-3">
-                Dịch vụ chuyên môn
+                Professional Services
               </h4>
               <div className="d-flex flex-wrap gap-2">
                 {artist.ArtistServices?.map((as) => {
-                  if (as.Service.IsDeleted === false) {
-                    return (
-                      <span
-                        key={as.ServiceId}
-                        className="badge bg-secondary rounded-pill"
-                      >
-                        {as.Service.Name}
-                      </span>
-                    );
-                  }
+                    if (as.Service.IsDeleted === false) {
+                        return (
+                            <span
+                              key={as.ServiceId}
+                              className="badge bg-secondary rounded-pill"
+                            >
+                              {as.Service.Name}
+                            </span>
+                          )
+                    }
                 })}
               </div>
             </div>
           </div>
         </div>
 
+        <div className="col-md-12 mb-4">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title border-bottom pb-3">
+                Certificates
+              </h4>
+              <div className="row">
+                {artist.Certificates?.map((cert) => (
+                  <div key={cert.Id} className="col-md-4 mb-3">
+                    <div className="card h-100">
+                      {cert.ImageUrl && (
+                        <img 
+                          src={cert.ImageUrl} 
+                          className="card-img-top" 
+                          alt={cert.Title}
+                          style={{ height: "200px", objectFit: "cover" }}
+                        />
+                      )}
+                      <div className="card-body">
+                        <h5 className="card-title">{cert.Title}</h5>
+                        <p className="card-text">{cert.Description}</p>
+                        <p className="text-muted">Order: {cert.NumerialOrder}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="col-md-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title border-bottom pb-3">Lịch làm việc</h4>
+              <h4 className="card-title border-bottom pb-3">Work Schedule</h4>
               <div className="table-responsive">
                 <table className="table table-hover">
                   <thead>
                     <tr>
-                      <th>Ngày làm việc</th>
-                      <th>Giờ bắt đầu</th>
-                      <th>Giờ kết thúc</th>
-                      <th>Thời gian giải lao</th>
-                      <th>Địa chỉ</th>
-                      <th>Mô tả của cửa hàng</th>
-                      <th>Action</th>
+                      <th>Date</th>
+                      <th>Start Time</th>
+                      <th>End Time</th>
+                      <th>Break Time</th>
+                      <th>Address</th>
+                      <th>Store Description</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -459,28 +488,14 @@ await fetchArtist()
                       <tr key={store.StoreId}>
                         <td>
                           {new Date(store.WorkingDate).toLocaleDateString(
-                            "vi-VN"
+                            "en-US"
                           )}
                         </td>
-                        <td>{store.StartTime}</td>
-                        <td>{store.EndTime}</td>
+                        <td>{store.StartTime.slice(0,5)}</td>
+                        <td>{store.EndTime.slice(0,5)}</td>
                         <td>{store.BreakTime}</td>
                         <td>{store.Store.Address}</td>
                         <td>{store.Store.Description}</td>
-                        <td>
-                          {store.Status === 0 ? (
-                            <>
-                              <Button
-                               onClick={() => handleUpdateArtistStoreStatus(store.ID, -1)}
-                              >Rejected</Button>
-                              <Button
-                              onClick={() => handleUpdateArtistStoreStatus(store.ID, 1)}
-                              >Accept</Button>
-                            </>
-                          ) : (
-                            getArtistStoreStatus[store.Status]
-                          )}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -548,7 +563,7 @@ await fetchArtist()
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Số năm kinh nghiệm</Form.Label>
+              <Form.Label>Year Of Experiences</Form.Label>
               <Form.Control
                 type="number"
                 name="YearsOfExperience"

@@ -11,6 +11,7 @@ const Profile = () => {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [artistStoreForms, setArtistStoreForms] = useState([]);
+  const [certificateForms, setCertificateForms] = useState([]);
   const today = new Date();
   
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const Profile = () => {
     DateOfBirth: "",
     artistServices: [],
     artistStores: [],
+    certificates: [],
   });
   const [selectedServices, setSelectedServices] = useState([]);
   const decodedToken = jwtDecode(localStorage.getItem("token"));
@@ -75,6 +77,49 @@ const Profile = () => {
     }]);
   };
 
+  const handleCertificateForm = () => {
+    setCertificateForms(prev => [...prev, {
+      numerialOrder: 0,
+      title: "",
+      description: "",
+      newImage: null,
+      imageUrl: ""
+    }]);
+  };
+
+  const handleRemoveCertificateForm = (formId) => {
+    setCertificateForms(prev => prev.filter(form => form.id !== formId));
+  }
+
+  const handleCertificateFormChange = (formId, field, value) => {
+    setCertificateForms(prev => {
+      // If changing numerialOrder, check for duplicates
+      if (field === "numerialOrder") {
+        const newValue = parseInt(value);
+        // Check if the new value already exists in other forms
+        const isDuplicate = prev.some(form => 
+          form.id !== formId && form.numerialOrder === newValue
+        );
+        
+        if (isDuplicate) {
+          // Find the next available number
+          let nextAvailable = newValue;
+          while (prev.some(form => form.id !== formId && form.numerialOrder === nextAvailable)) {
+            nextAvailable++;
+          }
+          value = nextAvailable;
+        }
+      }
+
+      return prev.map(form => {
+        if (form.id === formId) {
+          return { ...form, [field]: value };
+        }
+        return form;
+      });
+    });
+  };
+
   const handleRemoveArtistStoreForm = (formId) => {
     setArtistStoreForms(prev => prev.filter(form => form.id !== formId));
   };
@@ -108,6 +153,19 @@ const Profile = () => {
             handleSelectService(service.ServiceId)
         }
     });
+
+    // Add existing certificates to certificateForms
+    if (artist.Certificates && artist.Certificates.length > 0) {
+      const certificateForms = artist.Certificates.map(cert => ({
+        id: Date.now() + Math.random(),
+        numerialOrder: cert.NumerialOrder || 0,
+        title: cert.Title || "",
+        description: cert.Description || "",
+        imageUrl: cert.ImageUrl || "",
+        newImage: null
+      }));
+      setCertificateForms(certificateForms);
+    }
 
     // Add artist stores to forms if they are within 3 days from now
     
@@ -148,12 +206,15 @@ const Profile = () => {
       const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth)`;
       const expandArtistStore = `,artistStores($select=storeId,workingDate,startTime,endTime,breakTime;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
+      const expandArtistCertificate = `,certificates($select=Id,ArtistId,NumerialOrder,Title,Description,ImageUrl)`
 
       const res = await axiosInstance.get(
-        `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}`
+        `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}${expandArtistCertificate}`
       );
 
       const artist = res.value[0]
+      console.log(artist);
+      
       setArtist(artist)
       
     } catch (error) {
@@ -204,8 +265,6 @@ const Profile = () => {
         formDataToSend.append(`artistServices[${index}].serviceId`,item)})
 
       artistStoreForms.forEach((item, index) =>{
-        console.log(`artistStores[${index}].storeId`,item.StoreId);
-        
         formDataToSend.append(`artistStores[${index}].storeId`,item.StoreId)
         formDataToSend.append(`artistStores[${index}].workingDate`,item.WorkingDate)
         formDataToSend.append(`artistStores[${index}].startTime`,item.StartTime)
@@ -213,8 +272,18 @@ const Profile = () => {
         formDataToSend.append(`artistStores[${index}].breakTime`,item.BreakTime)
       })
 
-    //   formDataToSend.append('artistServices', JSON.stringify(selectedServices));
-    //   formDataToSend.append('artistStores', JSON.stringify(artistStoreForms));
+      // Add certificate forms to formData
+      certificateForms.forEach((item, index) => {
+        formDataToSend.append(`certificates[${index}].numerialOrder`, item.numerialOrder)
+        formDataToSend.append(`certificates[${index}].title`, item.title)
+        formDataToSend.append(`certificates[${index}].description`, item.description)
+        if (item.newImage) {
+          formDataToSend.append(`certificates[${index}].newImage`, item.newImage)
+        } else if (item.imageUrl) {
+          formDataToSend.append(`certificates[${index}].imageUrl`, item.imageUrl)
+        }
+      })
+
       await updateArtist(artist.ID, formDataToSend);
       await fetchArtist();
       handleCloseModal();
@@ -247,6 +316,7 @@ const Profile = () => {
       DateOfBirth: "",
       artistServices: [],
       artistStores: [],
+      certificates: [],
     });
 
     // Reset selectedServices
@@ -287,7 +357,7 @@ const Profile = () => {
   if (!artist) {
     return (
       <div className="container py-5">
-        <div className="alert alert-info">Không tìm thấy thông tin artist</div>
+        <div className="alert alert-info">Artist information not found</div>
       </div>
     );
   }
@@ -315,11 +385,11 @@ const Profile = () => {
                   <h2 className="mb-1">{artist.User.FullName}</h2>
                   <p className="text-muted mb-1">Level: {artist.Level}</p>
                   <p className="text-muted">
-                    Kinh nghiệm: {artist.YearsOfExperience} năm
+                    Years of Experience: {artist.YearsOfExperience}
                   </p>
                   {artist.AverageRating && (
                     <p className="text-muted">
-                      Đánh giá: {artist.AverageRating}/5
+                      Rating: {artist.AverageRating}/5
                     </p>
                   )}
                 </div>
@@ -334,7 +404,7 @@ const Profile = () => {
           <div className="card">
             <div className="card-body">
               <h4 className="card-title border-bottom pb-3">
-                Thông tin cá nhân
+                Personal Information
               </h4>
               <div className="row">
                 <div className="col-md-4">
@@ -345,16 +415,16 @@ const Profile = () => {
                 </div>
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <strong className="text-muted">Số điện thoại:</strong>
+                    <strong className="text-muted">Phone Number:</strong>
                     <p className="mb-0">{artist.User.PhoneNumber}</p>
                   </div>
                 </div>
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <strong className="text-muted">Ngày sinh:</strong>
+                    <strong className="text-muted">Date of Birth:</strong>
                     <p className="mb-0">
                       {new Date(artist.User.DateOfBirth).toLocaleDateString(
-                        "vi-VN"
+                        "en-US"
                       )}
                     </p>
                   </div>
@@ -368,7 +438,7 @@ const Profile = () => {
           <div className="card">
             <div className="card-body">
               <h4 className="card-title border-bottom pb-3">
-                Dịch vụ chuyên môn
+                Professional Services
               </h4>
               <div className="d-flex flex-wrap gap-2">
                 {artist.ArtistServices?.map((as) => {
@@ -388,20 +458,51 @@ const Profile = () => {
           </div>
         </div>
 
+        <div className="col-md-12 mb-4">
+          <div className="card">
+            <div className="card-body">
+              <h4 className="card-title border-bottom pb-3">
+                Certificates
+              </h4>
+              <div className="row">
+                {artist.Certificates?.map((cert) => (
+                  <div key={cert.Id} className="col-md-4 mb-3">
+                    <div className="card h-100">
+                      {cert.ImageUrl && (
+                        <img 
+                          src={cert.ImageUrl} 
+                          className="card-img-top" 
+                          alt={cert.Title}
+                          style={{ height: "200px", objectFit: "cover" }}
+                        />
+                      )}
+                      <div className="card-body">
+                        <h5 className="card-title">{cert.Title}</h5>
+                        <p className="card-text">{cert.Description}</p>
+                        <p className="text-muted">Order: {cert.NumerialOrder}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="col-md-12">
           <div className="card">
             <div className="card-body">
-              <h4 className="card-title border-bottom pb-3">Lịch làm việc</h4>
+              <h4 className="card-title border-bottom pb-3">Work Schedule</h4>
               <div className="table-responsive">
                 <table className="table table-hover">
                   <thead>
                     <tr>
-                      <th>Ngày làm việc</th>
-                      <th>Giờ bắt đầu</th>
-                      <th>Giờ kết thúc</th>
-                      <th>Thời gian giải lao</th>
-                      <th>Địa chỉ</th>
-                      <th>Mô tả của cửa hàng</th>
+                      <th>Date</th>
+                      <th>Start Time</th>
+                      <th>End Time</th>
+                      <th>Break Time</th>
+                      <th>Address</th>
+                      <th>Store Description</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -409,11 +510,11 @@ const Profile = () => {
                       <tr key={store.StoreId}>
                         <td>
                           {new Date(store.WorkingDate).toLocaleDateString(
-                            "vi-VN"
+                            "en-US"
                           )}
                         </td>
-                        <td>{store.StartTime}</td>
-                        <td>{store.EndTime}</td>
+                        <td>{store.StartTime.slice(0,5)}</td>
+                        <td>{store.EndTime.slice(0,5)}</td>
                         <td>{store.BreakTime}</td>
                         <td>{store.Store.Address}</td>
                         <td>{store.Store.Description}</td>
@@ -426,17 +527,17 @@ const Profile = () => {
           </div>
         </div>
         <button type="button" className="btn btn-sm btn-primary" onClick={() => handleShowModal()}>
-            Sửa Thông Tin
+            Modify Profile
           </button>
       </div>
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Sửa thông tin</Modal.Title>
+          <Modal.Title>Modify Profile</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Họ tên</Form.Label>
+              <Form.Label>Full Name</Form.Label>
               <Form.Control
                 type="text"
                 name="FullName"
@@ -451,20 +552,20 @@ const Profile = () => {
               <Form.Control type="email" name="Email" value={formData.Email} onChange={handleInputChange} required disabled={isSubmitting} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Số điện thoại</Form.Label>
+              <Form.Label>Phone Number</Form.Label>
               <Form.Control type="tel" name="PhoneNumber" value={formData.PhoneNumber} onChange={handleInputChange} required disabled={isSubmitting} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Ngày sinh</Form.Label>
+              <Form.Label>Date of Birth</Form.Label>
               <Form.Control type="date" name="DateOfBirth" value={formData.DateOfBirth} onChange={handleInputChange} required disabled={isSubmitting} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Hình ảnh</Form.Label>
+              <Form.Label>Profile Image</Form.Label>
               <Form.Control type="file" onChange={handleImageChange} accept="image/*" disabled={isSubmitting} />
               {formData.ImageUrl && !formData.NewImage && <img src={formData.ImageUrl} alt="Current" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Professional Service</Form.Label>
+              <Form.Label>Professional Services</Form.Label>
               <div style={{ maxHeight: "200px", overflowY: "auto" }}>
                 <ListGroup>
                   {services.map((service) => (
@@ -484,37 +585,37 @@ const Profile = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Lịch làm việc</Form.Label>
+              <Form.Label>Work Schedule</Form.Label>
               <Button 
                 variant="outline-primary" 
                 className="mb-3" 
                 onClick={handleAddArtistStoreForm}
                 disabled={isSubmitting}
               >
-                Thêm lịch làm việc
+                Add Schedule
               </Button>
               {artistStoreForms.map((form) => (
                 <div key={form.id} className="border p-3 mb-3 rounded">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="mb-0">Lịch làm việc mới</h6>
+                    <h6 className="mb-0">New Schedule</h6>
                     <Button 
                       variant="outline-danger" 
                       size="sm"
                       onClick={() => handleRemoveArtistStoreForm(form.id)}
                       disabled={isSubmitting}
                     >
-                      Xóa
+                      Remove
                     </Button>
                   </div>
                   <Form.Group className="mb-2">
-                    <Form.Label>Cửa hàng</Form.Label>
+                    <Form.Label>Store</Form.Label>
                     <Form.Select
                       value={form.StoreId}
                       onChange={(e) => handleArtistStoreFormChange(form.id, "StoreId", e.target.value)}
                       required
                       disabled={isSubmitting}
                     >
-                      <option value="">Chọn cửa hàng</option>
+                      <option value="">Select Store</option>
                       {stores.map((store) => (
                         <option key={store.ID} value={store.ID}>
                           {store.Address}
@@ -523,7 +624,7 @@ const Profile = () => {
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="mb-2">
-                    <Form.Label>Ngày làm việc</Form.Label>
+                    <Form.Label>Working Date</Form.Label>
                     <Form.Control
                       type="date"
                       value={form.WorkingDate}
@@ -533,7 +634,7 @@ const Profile = () => {
                     />
                   </Form.Group>
                   <Form.Group className="mb-2">
-                    <Form.Label>Giờ bắt đầu</Form.Label>
+                    <Form.Label>Start Time</Form.Label>
                     <Form.Control
                       type="time"
                       value={form.StartTime}
@@ -543,7 +644,7 @@ const Profile = () => {
                     />
                   </Form.Group>
                   <Form.Group className="mb-2">
-                    <Form.Label>Giờ kết thúc</Form.Label>
+                    <Form.Label>End Time</Form.Label>
                     <Form.Control
                       type="time"
                       value={form.EndTime}
@@ -553,7 +654,7 @@ const Profile = () => {
                     />
                   </Form.Group>
                   <Form.Group className="mb-2">
-                    <Form.Label>Thời gian giải lao</Form.Label>
+                    <Form.Label>Break Time</Form.Label>
                     <Form.Control
                       type="text"
                       value={form.BreakTime}
@@ -565,85 +666,80 @@ const Profile = () => {
                 </div>
               ))}
             </Form.Group>
-          
+
             <Form.Group className="mb-3">
-              <Form.Label>Certificate</Form.Label>
+              <Form.Label>Certificates</Form.Label>
               <Button 
                 variant="outline-primary" 
                 className="mb-3" 
-                onClick={handleAddArtistStoreForm}
+                onClick={handleCertificateForm}
                 disabled={isSubmitting}
               >
-                Thêm lịch làm việc
+                Add Certificate
               </Button>
-              {artistStoreForms.map((form) => (
+              {certificateForms.map((form) => (
                 <div key={form.id} className="border p-3 mb-3 rounded">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="mb-0">Lịch làm việc mới</h6>
+                    <h6 className="mb-0">Certificate</h6>
                     <Button 
                       variant="outline-danger" 
                       size="sm"
-                      onClick={() => handleRemoveArtistStoreForm(form.id)}
+                      onClick={() => handleRemoveCertificateForm(form.id)}
                       disabled={isSubmitting}
                     >
-                      Xóa
+                      Remove
                     </Button>
                   </div>
                   <Form.Group className="mb-2">
-                    <Form.Label>Cửa hàng</Form.Label>
-                    <Form.Select
-                      value={form.StoreId}
-                      onChange={(e) => handleArtistStoreFormChange(form.id, "StoreId", e.target.value)}
-                      required
-                      disabled={isSubmitting}
-                    >
-                      <option value="">Chọn cửa hàng</option>
-                      {stores.map((store) => (
-                        <option key={store.ID} value={store.ID}>
-                          {store.Address}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                  <Form.Group className="mb-2">
-                    <Form.Label>Ngày làm việc</Form.Label>
+                    <Form.Label>Order</Form.Label>
                     <Form.Control
-                      type="date"
-                      value={form.WorkingDate}
-                      onChange={(e) => handleArtistStoreFormChange(form.id, "WorkingDate", e.target.value)}
+                      type="number"
+                      value={form.numerialOrder}
+                      onChange={(e) => handleCertificateFormChange(form.id, "numerialOrder", e.target.value)}
                       required
                       disabled={isSubmitting}
                     />
                   </Form.Group>
                   <Form.Group className="mb-2">
-                    <Form.Label>Giờ bắt đầu</Form.Label>
-                    <Form.Control
-                      type="time"
-                      value={form.StartTime}
-                      onChange={(e) => handleArtistStoreFormChange(form.id, "StartTime", e.target.value)}
-                      required
-                      disabled={isSubmitting}
-                    />
-                  </Form.Group>
-                  <Form.Group className="mb-2">
-                    <Form.Label>Giờ kết thúc</Form.Label>
-                    <Form.Control
-                      type="time"
-                      value={form.EndTime}
-                      onChange={(e) => handleArtistStoreFormChange(form.id, "EndTime", e.target.value)}
-                      required
-                      disabled={isSubmitting}
-                    />
-                  </Form.Group>
-                  <Form.Group className="mb-2">
-                    <Form.Label>Thời gian giải lao</Form.Label>
+                    <Form.Label>Title</Form.Label>
                     <Form.Control
                       type="text"
-                      value={form.BreakTime}
-                      onChange={(e) => handleArtistStoreFormChange(form.id, "BreakTime", e.target.value)}
+                      value={form.title}
+                      onChange={(e) => handleCertificateFormChange(form.id, "title", e.target.value)}
                       required
                       disabled={isSubmitting}
                     />
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      value={form.description}
+                      onChange={(e) => handleCertificateFormChange(form.id, "description", e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-2">
+                    <Form.Label>Certificate Image</Form.Label>
+                    <Form.Control
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        handleCertificateFormChange(form.id, "newImage", file);
+                        handleCertificateFormChange(form.id, "imageUrl", URL.createObjectURL(file));
+                      }}
+                      accept="image/*"
+                      disabled={isSubmitting}
+                    />
+                    {form.imageUrl && !form.newImage && (
+                      <img 
+                        src={form.imageUrl} 
+                        alt="Current Certificate" 
+                        className="mt-2" 
+                        style={{ width: "100px", height: "100px", objectFit: "cover" }} 
+                      />
+                    )}
                   </Form.Group>
                 </div>
               ))}
@@ -651,16 +747,16 @@ const Profile = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal} disabled={isSubmitting}>
-              Hủy
+              Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  "Đang cập nhật..."
+                  Saving...
                 </>
               ) : (
-                "Cập nhật"
+                "Save Changes"
               )}
             </Button>
           </Modal.Footer>

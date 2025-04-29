@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Form, InputGroup, Modal, Spinner, Table, Image } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, InputGroup, Modal, Spinner, Table, Image, Badge } from 'react-bootstrap';
 import axiosInstance from "../services/axiosConfig";
-import { FaEdit, FaEye, FaSearch } from "react-icons/fa";
+import { FaEdit, FaEye, FaSearch, FaStar, FaTrash } from "react-icons/fa";
 import Pagination from "../components/Pagination";
 
 const Stores = () => {
@@ -222,8 +222,8 @@ const Stores = () => {
       return(
         <Container fluid>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>stores</h2>
-            <Button variant="primary" onClick={() => handleShowModal()}>Add New store</Button>
+            <h2>Stores</h2>
+            <Button variant="primary" onClick={() => handleShowModal()}>Add New Store</Button>
           </div>
     
           <div className="mb-4">
@@ -241,163 +241,198 @@ const Stores = () => {
                 </InputGroup>
               </Col>
               <Col md={2}>
-          <Form.Select 
-            value={pageSize} 
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(0); // Reset to first page when changing page size
-            }}
-          >
-            {pageSizeOptions.map(size => (
-              <option key={size} value={size}>
-                {size} per page
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
+                <Form.Select 
+                  value={pageSize} 
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                >
+                  {pageSizeOptions.map(size => (
+                    <option key={size} value={size}>
+                      {size} per page
+                    </option>
+                  ))}
+                </Form.Select>
+              </Col>
             </Row>
           </div>
-    
-          <Table responsive bordered hover>
-  <thead>
-    <tr>
-      <th>Image</th>
-      <th>Address</th>
-      <th>Province</th>
-      <th>Description</th>
-      <th>Average Rating</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {stores.map((store) => (
-      <tr key={store.ID}>
-        <td>
-          <Image
-            src={store.ImageUrl}
-            alt="Store"
-            thumbnail
-            style={{ width: "80px", height: "80px", objectFit: "cover" }}
-          />
-        </td>
-        <td>{store.Address}</td>
-        <td>{store.Province}</td>
-        <td>{store.Description}</td>
-        <td>{store.AverageRating}</td>
-        <td>
-          <Button
-            variant="outline-primary"
-            size="sm"
-            className="me-1"
-            onClick={() => handleShowModal(store)}
-          >
-            <FaEdit className="me-1" /> Edit
-          </Button>
-          <Button
-            variant="outline-danger"
-            size="sm"
-            onClick={() => handleShowDeleteModal(store)}
-          >
-            <FaEye className="me-1" /> Delete
-          </Button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</Table>
 
+          <Table responsive striped hover>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Status</th>
+                <th>Address</th>
+                <th>Province</th>
+                <th>Description</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stores.map((store) => (
+                <tr key={store.ID}>
+                  <td>
+                    <Image
+                      src={store.ImageUrl}
+                      alt={store.Address}
+                      thumbnail
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    />
+                  </td>
+                  <td>
+                    <Badge bg={store.IsDeleted === false ? "success" : "warning"}>
+                      {store.IsDeleted === false ? "Active" : "Inactive"}
+                    </Badge>
+                  </td>
+                  <td>{store.Address}</td>
+                  <td>{store.Province}</td>
+                  <td>{store.Description}</td>
+                  <td>
+                    {store.AverageRating} <FaStar className="text-warning" />
+                  </td>
+                  <td>
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm" 
+                      className="me-2"
+                      onClick={() => handleShowModal(store)}
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button 
+                      variant="outline-danger" 
+                      size="sm"
+                      onClick={() => handleShowDeleteModal(store)}
+                    >
+                      <FaTrash />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
 
           <div className="d-flex justify-content-between align-items-center mt-4">
-        <div className="text-muted">
-          Showing {stores.length} of {totalCount} artists
-        </div>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-      </div>
-
-
-          <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedStore ? "Chỉnh sửa Store" : "Thêm Store mới"}</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleSubmit}>
-          <Modal.Body>
-            <AddressFormGroup
-              formData={formData}
-              setFormData={setFormData}
-              isSubmitting={isSubmitting}
-              apiKey={apiKey}
+            <div className="text-muted">
+              Showing {stores.length} of {totalCount} stores
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
             />
-            <Form.Group className="mb-3">
-              <Form.Label>Tỉnh</Form.Label>
-              <Form.Control type="text" name="Province" value={formData.Province} onChange={handleInputChange} required disabled={isSubmitting} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control as="textarea" name="Description" value={formData.Description} onChange={handleInputChange} required disabled={isSubmitting} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Hình ảnh</Form.Label>
-              <Form.Control type="file" onChange={handleImageChange} accept="image/*" disabled={isSubmitting} />
-              {formData.ImageUrl && !formData.NewImage && <img src={formData.ImageUrl} alt="Current" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Trạng thái</Form.Label>
-              {console.log(formData.Status, formData.Address)}
-              <Form.Select name="Status" value={formData.Status} onChange={handleInputChange} required disabled={isSubmitting}>
-                <option value={0}>Hoạt động</option>
-                <option value={1}>Không hoạt động</option>
-              </Form.Select>
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} disabled={isSubmitting}>
-              Hủy
-            </Button>
-            <Button variant="primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  {selectedStore ? "Đang cập nhật..." : "Đang thêm mới..."}
-                </>
-              ) : selectedStore ? (
-                "Cập nhật"
-              ) : (
-                "Thêm mới"
-              )}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-          {
-        (selectedStore !== undefined && selectedStore !== null) && (
+          </div>
+
+          <Modal show={showModal} onHide={handleCloseModal} size="lg">
+            <Modal.Header closeButton>
+              <Modal.Title>{selectedStore ? 'Edit Store' : 'Add New Store'}</Modal.Title>
+            </Modal.Header>
+            <Form onSubmit={handleSubmit}>
+              <Modal.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>Store Image</Form.Label>
+                  <Form.Control
+                    type="file"
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    disabled={isSubmitting}
+                  />
+                  {formData.ImageUrl && !formData.NewImage && (
+                    <img 
+                      src={formData.ImageUrl} 
+                      alt="Current" 
+                      className="mt-2" 
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }} 
+                    />
+                  )}
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    name="Description"
+                    value={formData.Description}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Address</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="Address"
+                    value={formData.Address}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Province</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="Province"
+                    value={formData.Province}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Status</Form.Label>
+                  <Form.Select
+                    name="Status"
+                    value={formData.Status}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  >
+                    <option value="0">Inactive</option>
+                    <option value="1">Active</option>
+                  </Form.Select>
+                </Form.Group>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={handleCloseModal} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </Modal.Footer>
+            </Form>
+          </Modal>
+
           <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirm Delete</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Are you sure you want to{" "}
-            {selectedStore.IsDeleted === true ? "active" : "deactive"}{" "}
-            {selectedStore.Address}? Customer can{" "}
-            {selectedStore.IsDeleted === true ? "" : "not"} see this
-            store.
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseDeleteModal}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={deleteStore}>
-              {selectedStore.IsDeleted === true
-                ? "Active"
-                : "Deactive"}
-            </Button>
-          </Modal.Footer>
-        </Modal>
-        )
-      }
+            <Modal.Header closeButton>
+              <Modal.Title>Delete Store</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              Are you sure you want to delete this store?
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleCloseDeleteModal}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={deleteStore}>
+                Delete
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </Container>
       )
     

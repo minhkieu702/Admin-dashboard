@@ -275,121 +275,79 @@ const Services = () => {
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Nail Services Management</h2>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          Add New Service
-        </Button>
+        <h2>Services</h2>
+        <Button variant="primary" onClick={() => handleShowModal()}>Add New Service</Button>
       </div>
 
-      <Row className="mb-4">
-        <Col md={6}>
-          <InputGroup>
-            <Form.Control
-              placeholder="Search services..."
-              aria-label="Search services"
-              onChange={handleSearch}
-            />
-            <Button variant="outline-secondary">
-              <FaSearch />
-            </Button>
-          </InputGroup>
-        </Col>
-        <Col md={2}>
-          <Form.Select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(0); // Reset to first page when changing page size
-            }}
-          >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size} per page
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
-      </Row>
-
-
-
-<Table responsive bordered hover>
-  <thead>
-    <tr>
-      <th>Image</th>
-      <th>Status</th>
-      <th>Name</th>
-      <th>Categories</th>
-      <th>Price</th>
-      <th>Description</th>
-      <th>Rating</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {services.map((service) => (
-      <tr key={service.ID}>
-        <td>
-          <Image
-            src={service.ImageUrl}
-            alt={service.FullName}
-            thumbnail
-            style={{ width: "100px", height: "100px", objectFit: "contain" }}
-          />
-        </td>
-      
-        <td>
-          <Badge bg={service.IsDeleted === false ? "success" : "warning"}>
-            {service.IsDeleted === false ? "Active" : "Inactive"}
-          </Badge>
-        </td>
-        <td>{service.Name}</td>
-        <td>
-          {service.CategoryServices?.map((category, index) => (
-            <Badge
-              key={index}
-              bg="info"
-              className="me-1 mb-1"
-              title={category.Data.Description}
+      <div className="mb-4">
+        <Row>
+          <Col md={6}>
+            <InputGroup>
+              <Form.Control
+                placeholder="Search services..."
+                aria-label="Search services"
+                onChange={handleSearch}
+              />
+              <Button variant="outline-secondary">
+                <FaSearch />
+              </Button>
+            </InputGroup>
+          </Col>
+          <Col md={2}>
+            <Form.Select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
             >
-              {category.Data.Name}
-            </Badge>
-          ))}
-        </td>
-        <td>
-          {new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(service?.Price)}
-        </td>
-        <td>{service.Description}</td>
-        <td>
-          {service.AverageRating} <FaStar className="text-warning" />
-        </td>
-        <td>
-          <Button
-            variant="outline-primary"
-            size="sm"
-            className="me-1"
-            onClick={() => handleShowModal(service)}
-          >
-            <FaEdit className="me-1" /> Edit
-          </Button>
-          <Button
-            variant="outline-danger"
-            size="sm"
-            onClick={() => handleShowDeleteModal(service)}
-          >
-            <FaTrash className="me-1" />{" "}
-            {service.IsDeleted === true ? "Active" : "Deactive"}
-          </Button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</Table>
+              {pageSizeOptions.map(size => (
+                <option key={size} value={size}>
+                  {size} per page
+                </option>
+              ))}
+            </Form.Select>
+          </Col>
+        </Row>
+      </div>
 
-
+      <Row>
+        {services.map((service) => (
+          <Col key={service.ID} md={3} className="mb-4">
+            <Card>
+              <Card.Img 
+                variant="top" 
+                src={service.ImageUrl} 
+                style={{ height: '200px', objectFit: 'cover' }}
+              />
+              <Card.Body>
+                <Card.Title>{service.Name}</Card.Title>
+                <Card.Text>{service.Description}</Card.Text>
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="h5 mb-0">${service.Price}</span>
+                  <div>
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm" 
+                      className="me-2"
+                      onClick={() => handleShowModal(service)}
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button 
+                      variant="outline-danger" 
+                      size="sm"
+                      onClick={() => handleShowDeleteModal(service)}
+                    >
+                      <FaTrash />
+                    </Button>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
 
       <div className="d-flex justify-content-between align-items-center mt-4">
         <div className="text-muted">
@@ -404,39 +362,78 @@ const Services = () => {
 
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{editingService ? "Chỉnh sửa Dịch vụ" : "Thêm Dịch vụ mới"}</Modal.Title>
+          <Modal.Title>{editingService ? 'Edit Service' : 'Add New Service'}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Tên Dịch vụ</Form.Label>
-              <Form.Control type="text" name="Name" value={formData.Name} onChange={handleInputChange} required disabled={isSubmitting} />
+              <Form.Label>Service Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="Name"
+                value={formData.Name}
+                onChange={handleInputChange}
+                required
+                disabled={isSubmitting}
+              />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control as="textarea" name="Description" value={formData.Description} onChange={handleInputChange} required disabled={isSubmitting} />
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                name="Description"
+                value={formData.Description}
+                onChange={handleInputChange}
+                required
+                disabled={isSubmitting}
+              />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Giá</Form.Label>
-              <Form.Control type="number" name="Price" value={formData.Price} onChange={handleInputChange} required disabled={isSubmitting} />
+              <Form.Label>Price</Form.Label>
+              <Form.Control
+                type="number"
+                name="Price"
+                value={formData.Price}
+                onChange={handleInputChange}
+                required
+                disabled={isSubmitting}
+              />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Hình ảnh</Form.Label>
-              <Form.Control type="file" onChange={handleImageChange} accept="image/*" disabled={isSubmitting} />
-              {formData.ImageUrl && <img src={formData.ImageUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
+              <Form.Label>Service Image</Form.Label>
+              <Form.Control
+                type="file"
+                onChange={handleImageChange}
+                accept="image/*"
+                disabled={isSubmitting}
+              />
+              {formData.ImageUrl && !formData.NewImage && (
+                <img 
+                  src={formData.ImageUrl} 
+                  alt="Current" 
+                  className="mt-2" 
+                  style={{ width: "100px", height: "100px", objectFit: "cover" }} 
+                />
+              )}
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Processing Description Image</Form.Label>
-              <Form.Control type="file" onChange={handleImageDescriptionChange} accept="image/*" disabled={isSubmitting} />
-              {formData.ImageDescriptionUrl && <img src={formData.ImageDescriptionUrl} alt="Preview" className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Danh mục</Form.Label>
+              <Form.Label>Categories</Form.Label>
               <div style={{ maxHeight: "200px", overflowY: "auto" }}>
                 <ListGroup>
                   {categories.map((category) => (
-                    <ListGroup.Item key={category.id}>
-                      <Form.Check type="checkbox" id={`category-${category.id}`} label={category.name} checked={selectedCategories.includes(category.id)} onChange={() => handleSelectCategory(category.id)} disabled={isSubmitting} />
+                    <ListGroup.Item key={category.ID}>
+                      <Form.Check 
+                        type="checkbox" 
+                        id={`${category.ID}`} 
+                        label={category.Name}  
+                        onChange={() => handleSelectCategory(category.ID)} 
+                        checked={selectedCategories.includes(category.ID)}
+                        disabled={isSubmitting} 
+                      />
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
@@ -445,49 +442,38 @@ const Services = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal} disabled={isSubmitting}>
-              Hủy
+              Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  {editingService ? "Loading..." : "Loading..."}
+                  Saving...
                 </>
-              ) : editingService ? (
-                "Cập nhật"
               ) : (
-                "Thêm mới"
+                "Save Changes"
               )}
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
-      {/* Delete Confirmation Modal */}
-      {selectedService !== undefined &&
-        selectedService !== null && (
-          <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
-            <Modal.Header closeButton>
-              <Modal.Title>Confirm Delete</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              Are you sure you want to{" "}
-              {selectedService.IsDeleted === true ? "active" : "deactive"}{" "}
-              {selectedService.Name}? Customer can{" "}
-              {selectedService.IsDeleted === true ? "" : "not"} see this
-              service.
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={handleCloseDeleteModal}>
-                Cancel
-              </Button>
-              <Button variant="danger" onClick={deleteService}>
-                {selectedService.IsDeleted === true
-                  ? "Active"
-                  : "Deactive"}
-              </Button>
-            </Modal.Footer>
-          </Modal>
-        )}
+
+      <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Service</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete this service?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseDeleteModal}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteService}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
