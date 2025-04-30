@@ -14,6 +14,7 @@ import {
   ListGroup,
   Image,
   ProgressBar,
+  Spinner,
 } from "react-bootstrap";
 import {
   FaEdit,
@@ -42,7 +43,7 @@ import {
 } from "@services/helper";
 import axiosInstance from "@services/axiosConfig";
 import Pagination from "@components/Pagination";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import MyBreadcrumb from "@components/MyBreadcrumb";
 
 const BookingDetail = () => {
@@ -51,6 +52,10 @@ const BookingDetail = () => {
   const [method, setMethod] = useState(0);
   const [startTimes, setStartTimes] = useState({});
   const [elapsedTimes, setElapsedTimes] = useState({});
+  const [percentCancellation, setPercentCancellation] = useState('');
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  
   const { id } = useParams();
 
   const payOnline = async (bookingId) => {
@@ -70,6 +75,7 @@ const BookingDetail = () => {
       window.location.href = response;
     }
   };
+  const navigate = useNavigate();
 
   const payOffline = async (bookingId) => {
     const formDataToSend = new FormData();
@@ -79,6 +85,7 @@ const BookingDetail = () => {
         "Content-Type": "multipart/form-data",
       },
     });
+    navigate("/paymentResult?status=PAID")
   };
 
   const postIsServing = async (bookingId) => {
@@ -189,12 +196,26 @@ const BookingDetail = () => {
     return artistStore
   };
 
+  const predictCancellation = async () => {
+    try {
+      setIsPredicting(true);
+      const value = await axiosInstance.get(`/api/Booking/PredictCancel?bookingId=${id.substring(id.indexOf(":") + 1)}`)
+      setPercentCancellation(value.cancellationProbability)
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsPredicting(false);
+    }
+  }
+
   const fetchBookings = async () => {
     try {
+      setIsPageLoading(true);
       const baseUrl = "/odata/booking?";
       const filter = `$filter=ID eq ${id.substring(id.indexOf(":") + 1)}`;
       const select = `&$select=id,lastModifiedAt,status,startTime,serviceDate,predictEndTime,totalAmount,customerSelectedId,artistStoreId`;
-      const url = `${baseUrl}${filter}${select}`;
+      const expandCancellations = `&$expand=cancellations($select=id,reason,percent;$top=1;$orderby=cancelledAt desc)`
+      const url = `${baseUrl}${filter}${select}${expandCancellations}`;
 
       const response = await axiosInstance.get(url);
 
@@ -214,6 +235,8 @@ const BookingDetail = () => {
       setBooking(bookingRes);
     } catch (error) {
       console.error("Error fetching bookings:", error);
+    } finally {
+      setIsPageLoading(false);
     }
   };
 
@@ -230,10 +253,11 @@ const BookingDetail = () => {
     setStartTimes((prev) => ({ ...prev, [serviceId]: now }));
     setElapsedTimes((prev) => ({ ...prev, [serviceId]: 0 }));
 
-    // Start timer
+    // Start timer with reference time instead of using state
+    const startTime = now;
     const timer = setInterval(() => {
       setElapsedTimes((prev) => {
-        const elapsed = Math.floor((new Date() - prev[serviceId]) / 1000);
+        const elapsed = Math.floor((new Date() - startTime) / 1000);
         return { ...prev, [serviceId]: elapsed };
       });
     }, 1000);
@@ -242,7 +266,7 @@ const BookingDetail = () => {
       const updatedBooking = { ...prevBooking };
       const serviceIndex =
         updatedBooking.CustomerSelected.NailDesignServiceSelecteds.findIndex(
-          (service) => service.NailDesignService.ServiceId === serviceId
+          (service) => service.NailDesignService.ID === serviceId
         );
       if (serviceIndex !== -1) {
         updatedBooking.CustomerSelected.NailDesignServiceSelecteds[
@@ -281,7 +305,7 @@ const BookingDetail = () => {
 
     // Send duration to API
     const formDataToSend = new FormData();
-    formDataToSend.append("ServiceId", serviceId);
+    formDataToSend.append("id", serviceId);
     formDataToSend.append("Duration", durationInMinutes);
     await axiosInstance.post("/api/NailDesignService/Time", formDataToSend, {
       headers: {
@@ -294,9 +318,9 @@ const BookingDetail = () => {
       const updatedBooking = { ...prevBooking };
       const serviceIndex =
         updatedBooking.CustomerSelected.NailDesignServiceSelecteds.findIndex(
-          (service) => service.NailDesignService.ServiceId === serviceId
+          (service) => service.NailDesignService.ID == serviceId
         );
-      if (serviceIndex !== -1) {
+      if (serviceIndex != -1) {
         updatedBooking.CustomerSelected.NailDesignServiceSelecteds[
           serviceIndex
         ].NailDesignService.Status = 1;
@@ -316,7 +340,20 @@ const BookingDetail = () => {
   return (
     <Container className="w-100 fade-in p-4">
       <MyBreadcrumb items={breadcrumbItems} />
-      {booking && (
+      {isPageLoading ? (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "60vh" }}>
+          <div className="text-center">
+            <Spinner
+              animation="border"
+              variant="primary"
+              style={{ width: "3rem", height: "3rem" }}
+            />
+            <div className="mt-3">
+              <h5 className="text-muted">Loading booking details...</h5>
+            </div>
+          </div>
+        </div>
+      ) : booking ? (
         <Row>
           <Col md={8}>
             <Card className="mb-4">
@@ -331,10 +368,6 @@ const BookingDetail = () => {
                     <FaPlay className="me-1" />
                     {getServiceStatusInBooking[booking.Status]}
                   </Button>
-                  {console.log(
-                    booking.Status,
-                    getServiceStatusInBooking[booking.Status]
-                  )}
                 </div>
               </Card.Header>
               <Card.Body>
@@ -371,6 +404,46 @@ const BookingDetail = () => {
                         }).format(booking.TotalAmount)}
                     </span>
                   </ListGroup.Item>
+                  {
+                    (booking.Status == 1 || booking.Status == 0 || booking.Status == -1) && <ListGroup.Item className="d-flex justify-content-between">
+                    <span>Percent Cancellation</span>
+                    {
+                      percentCancellation == '' ?
+                      booking.Cancellations[0] == null ? (
+                        <Button 
+                          onClick={predictCancellation}
+                          disabled={isPredicting}
+                        >
+                          {isPredicting ? (
+                            <>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                                className="me-2"
+                              />
+                              Predicting...
+                            </>
+                          ) : (
+                            'Predict'
+                          )}
+                        </Button>
+                      ) : (
+                        <span>
+                          {booking.Cancellations[0].Reason}
+                        </span>
+                      ) : percentCancellation != '-1' ? (
+                        <span>
+                          {percentCancellation}%
+                        </span>
+                      ) : (
+                        <span>50%</span>
+                      )
+                    }
+                  </ListGroup.Item>
+                  }
                 </ListGroup>
               </Card.Body>
             </Card>
@@ -424,8 +497,6 @@ const BookingDetail = () => {
                   <tbody>
                     {booking.CustomerSelected?.NailDesignServiceSelecteds?.map(
                       (service, index, array) => {
-                        console.log(service);
-                        
                         const isLastOfDesign = index === array.length - 1 || 
                           array[index + 1].NailDesignService.NailDesign.Design.ID !== 
                           service.NailDesignService.NailDesign.Design.ID;
@@ -476,7 +547,7 @@ const BookingDetail = () => {
                                     size="sm"
                                     onClick={() =>
                                       handleStartService(
-                                        service.NailDesignService?.ServiceId
+                                        service.NailDesignService?.ID
                                       )
                                     }
                                   >
@@ -489,7 +560,7 @@ const BookingDetail = () => {
                                     size="sm"
                                     onClick={() =>
                                       handleCompleteService(
-                                        service.NailDesignService?.ServiceId
+                                        service.NailDesignService?.ID
                                       )
                                     }
                                   >
@@ -557,7 +628,7 @@ const BookingDetail = () => {
               )
             }
 
-            {booking?.Status == 2 || (booking?.CustomerSelected?.NailDesignServiceSelecteds?.every(
+            {(booking?.CustomerSelected?.NailDesignServiceSelecteds?.every(
               (c) => c.NailDesignService.Status === 1
             )) && (
               <Card className="mb-4">
@@ -737,6 +808,10 @@ const BookingDetail = () => {
             </Card>
           </Col>
         </Row>
+      ) : (
+        <div className="text-center py-5">
+          <h4 className="text-muted">No booking information found</h4>
+        </div>
       )}
     </Container>
   );

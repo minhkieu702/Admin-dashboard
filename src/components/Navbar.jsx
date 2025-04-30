@@ -70,7 +70,7 @@ const Navbar = () => {
 
     const fetchNotification = async () => {
         try {
-            const res = await axiosInstance.get(`/odata/notification?$filter=userId eq ${getId()}&$select=ID,LastModifiedAt,IsDeleted,Status,NotificationType,Content,Title&$orderby=LastModifiedAt desc&$count=true`);
+            const res = await axiosInstance.get(`/odata/notification?$filter=userId eq ${getId()}&$select=ID,LastModifiedAt,IsDeleted,Status,NotificationType,Content,Title,WebHref&$orderby=LastModifiedAt desc&$count=true`);
             await fetchCount();
             setNotifications(res.value);
         } catch (err) {
@@ -220,7 +220,7 @@ const Navbar = () => {
                                                 key={notification.ID}
                                                 className={`p-3 border-bottom ${getNotificationStatus(notification.Status)}`}
                                             >
-                                                <div className="d-flex align-items-start gap-2">
+                                                <div className="d-flex align-items-start gap-2" onClick={() => navigate(notification.WebHref)}>
                                                     <div className="notification-icon mt-1">
                                                         {getNotificationIcon(notification.NotificationType)}
                                                     </div>

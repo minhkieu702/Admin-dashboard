@@ -81,12 +81,13 @@ const Bookings = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      alert("Payment successful!");
+      // alert("Payment successful!");
+      navigate("/paymentResult?status=PAID")
       setSelectedBookings([]);
       fetchBookings();
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Payment failed. Please try again.");
+      navigate("/paymentResult?status=Failed")
     } finally {
       setIsPaymentLoading(false);
     }
@@ -107,7 +108,7 @@ const Bookings = () => {
       formDataToSend.append(
         `paymentDetailRequests[${index}].bookingId`,
         item
-      );
+      );      
     });
     method === 0 ? await payOnline(formDataToSend) : await payOffline(formDataToSend)
   };
