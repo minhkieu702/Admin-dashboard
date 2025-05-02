@@ -337,6 +337,11 @@ const BookingDetail = () => {
     },
   ];
 
+  const handleRemoveFeedback = async (feedbackId) => {
+    await axiosInstance.delete(`/api/feedback?id=${feedbackId}`)
+    await fetchBookings()
+  }
+
   return (
     <Container className="w-100 fade-in p-4">
       <MyBreadcrumb items={breadcrumbItems} />
@@ -611,6 +616,13 @@ const BookingDetail = () => {
                                             ))}
                                           </div>
                                         )}
+                                        
+                                        <div className="d-flex gap-2 mt-2">
+                            <Button onClick={() => handleRemoveFeedback(feedback.ID)}>
+                              Delete
+                            </Button>
+                          </div>
+                                        
                                       </div>
                                     ))}
                                   </div>
@@ -738,6 +750,11 @@ const BookingDetail = () => {
                             ))}
                           </div>
                         )}
+                        <div className="d-flex gap-2 mt-2">
+                            <Button onClick={() => handleRemoveFeedback(feedback.ID)}>
+                              Delete
+                            </Button>
+                          </div>
                       </div>
                     ))}
                   </div>
@@ -800,6 +817,11 @@ const BookingDetail = () => {
                             ))}
                           </div>
                         )}
+                        <div className="d-flex gap-2 mt-2">
+                            <Button onClick={() => handleRemoveFeedback(feedback.ID)}>
+                              Delete
+                            </Button>
+                          </div>
                       </div>
                     ))}
                   </div>
