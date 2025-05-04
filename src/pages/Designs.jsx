@@ -30,22 +30,23 @@ const [services, setServices] = useState([]);
 const [editingDesign, setEditingDesign] = useState(null);
 
 useEffect(() => {
-  const getDesigns = async () => {
-    setIsLoading(true);
-    try {
-      const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
-      const designs = res.value || [];
-      setDesigns(designs);
-    } catch (error) {
-      console.error("Error fetching designs:", error);
-      setDesigns([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   getDesigns();
 }, []);
-
+const getDesigns = async () => {
+  setIsLoading(true);
+  try {
+    const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
+    const designs = res.value || [];
+    console.log(designs);
+    
+    setDesigns(designs);
+  } catch (error) {
+    console.error("Error fetching designs:", error);
+    setDesigns([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 useEffect(() => {
   const fetchOptions = async () => {
     setIsLoading(true);
@@ -231,8 +232,11 @@ const handleSubmit = async (e) => {
     formData.medias.forEach((media, index) => {
       if (media.newImage) {
         formDataToSend.append(`medias[${index}].newImage`, media.newImage);
-        formDataToSend.append(`medias[${index}].numerialOrder`, media.numerialOrder);
+      }        
+      if (media.imageUrl) {
+        formDataToSend.append(`medias[${index}].imageUrl`, media.imageUrl)
       }
+      formDataToSend.append(`medias[${index}].numerialOrder`, media.numerialOrder);
     });
 
     formData.nailDesigns.forEach((design, index) => {
@@ -247,7 +251,6 @@ const handleSubmit = async (e) => {
 
       design.nailDesignServices.forEach((service, serviceIndex) => {
         formDataToSend.append(`nailDesigns[${index}].nailDesignServices[${serviceIndex}].serviceId`, service.serviceId);
-        formDataToSend.append(`nailDesigns[${index}].nailDesignServices[${serviceIndex}].extraPrice`, service.extraPrice);
       });
     });
 
@@ -266,8 +269,9 @@ const handleSubmit = async (e) => {
     }
 
     handleCloseModal();
-    const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
-    setDesigns(res.value);
+    await getDesigns()
+    // const res = await axiosInstance.get(`/odata/design?$select=id,name,description,trendscore,averageRating&$expand=medias($orderby=numerialOrder asc;$top=1;$select=imageUrl)`);
+    // setDesigns(res.value);
   } catch (error) {
     console.error("Error saving design:", error);
     if (error.response?.data?.errors) {
@@ -342,7 +346,7 @@ const toggleDesign = (id) => {
 useEffect(() => {
   return () => {
     formData.medias.forEach(media => {
-      if (media.imageUrl.startsWith('blob:')) {
+      if (media?.imageUrl?.startsWith('blob:')) {
         URL.revokeObjectURL(media.imageUrl);
       }
     });
@@ -369,8 +373,8 @@ useEffect(() => {
       SkintoneIds: skintones.map(s => s.ID),
       PaintTypeIds: paintTypes.map(p => p.ID),
       medias: designDetail.Medias?.map(m => ({
-        imageUrl: m.ImageUrl,
-        numerialOrder: m.NumerialOrder
+        imageUrl: m.imageUrl,
+        numerialOrder: m.numerialOrder
       })) || [],
       nailDesigns: designDetail.NailDesigns?.map(nd => ({
         imageUrl: nd.ImageUrl,
