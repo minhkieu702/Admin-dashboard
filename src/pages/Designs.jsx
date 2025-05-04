@@ -231,15 +231,17 @@ const handleSubmit = async (e) => {
     formData.medias.forEach((media, index) => {
       if (media.newImage) {
         formDataToSend.append(`medias[${index}].newImage`, media.newImage);
+        formDataToSend.append(`medias[${index}].numerialOrder`, media.numerialOrder);
       }
-      formDataToSend.append(`medias[${index}].numerialOrder`, media.numerialOrder);
     });
 
     formData.nailDesigns.forEach((design, index) => {
       if (design.newImage) {
         formDataToSend.append(`nailDesigns[${index}].newImage`, design.newImage);
       }
-      formDataToSend.append(`nailDesigns[${index}].imageUrl`, design.imageUrl);
+      if (design.imageUrl) {
+        formDataToSend.append(`nailDesigns[${index}].imageUrl`, design.imageUrl);
+      }
       formDataToSend.append(`nailDesigns[${index}].nailPosition`, design.nailPosition);
       formDataToSend.append(`nailDesigns[${index}].isLeft`, design.isLeft);
 
@@ -250,7 +252,7 @@ const handleSubmit = async (e) => {
     });
 
     if (editingDesign) {
-      await axiosInstance.put(`/api/Design/${editingDesign.ID}`, formDataToSend, {
+      await axiosInstance.put(`/api/Design?id=${editingDesign.ID}`, formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data"
         }
@@ -619,7 +621,7 @@ return (
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Hình ảnh Design</Form.Label>
-            <Form.Control type="file" multiple onChange={handleMediaChange} accept="image/*" required disabled={isSubmitting} />
+            <Form.Control type="file" multiple onChange={handleMediaChange} accept="image/*" disabled={isSubmitting} />
             <div className="d-flex flex-wrap gap-2 mt-2">
               {formData.medias.map((media, index) => (
                 <img key={index} src={media.imageUrl} alt={`Design ${index + 1}`} style={{ width: "100px", height: "100px", objectFit: "cover" }} />
@@ -668,7 +670,6 @@ return (
                       );
                     }}
                     accept="image/*"
-                    required
                     disabled={isSubmitting}
                   />
                   {design.imageUrl && <img src={design.imageUrl} alt={`Nail Design ${index + 1}`} className="mt-2" style={{ width: "100px", height: "100px", objectFit: "cover" }} />}
