@@ -204,7 +204,7 @@ const Profile = () => {
       const filter = `$filter=id eq ${id}`;
       const selectArtist = `&$select=id,username,yearsOfExperience,level,averageRating`;
       const expandUser = `&$expand=user($select=fullName,email,phoneNumber,imageUrl,dateOfBirth)`;
-      const expandArtistStore = `,artistStores($select=storeId,workingDate,startTime,endTime,breakTime;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
+      const expandArtistStore = `,artistStores($select=id,storeId,workingDate,startTime,endTime,breakTime;$orderby=workingDate desc;$expand=store($select=id,province,address,description,latitude,longtitude,isDeleted))`;
       const expandArtistService = `,artistServices($select=serviceId;$expand=service($select=id,name,description,imageUrl,price,isDeleted))`;
       const expandArtistCertificate = `,certificates($select=Id,ArtistId,NumerialOrder,Title,Description,ImageUrl)`
 
@@ -212,9 +212,7 @@ const Profile = () => {
         `${uri}${filter}${selectArtist}${expandUser}${expandArtistService}${expandArtistStore}${expandArtistCertificate}`
       );
 
-      const artist = res.value[0]
-      console.log(artist);
-      
+      const artist = res.value[0]      
       setArtist(artist)
       
     } catch (error) {
@@ -507,7 +505,7 @@ const Profile = () => {
                   </thead>
                   <tbody>
                     {artist.ArtistStores?.map((store) => (
-                      <tr key={store.StoreId}>
+                      <tr key={store.ID}>
                         <td>
                           {new Date(store.WorkingDate).toLocaleDateString(
                             "en-US"

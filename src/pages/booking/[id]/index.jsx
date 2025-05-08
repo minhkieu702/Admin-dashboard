@@ -55,6 +55,8 @@ const BookingDetail = () => {
   const [percentCancellation, setPercentCancellation] = useState('');
   const [isPredicting, setIsPredicting] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   
   const { id } = useParams();
 
@@ -342,6 +344,16 @@ const BookingDetail = () => {
     await fetchBookings()
   }
 
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+    setShowImageModal(true);
+  };
+
+  const handleCloseImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImage(null);
+  };
+
   return (
     <Container className="w-100 fade-in p-4">
       <MyBreadcrumb items={breadcrumbItems} />
@@ -611,7 +623,8 @@ const BookingDetail = () => {
                                                 key={image.Id}
                                                 src={image.ImageUrl}
                                                 thumbnail
-                                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                                style={{ width: '50px', height: '50px', objectFit: 'cover', cursor: 'pointer' }}
+                                                onClick={() => handleImageClick(image)}
                                               />
                                             ))}
                                           </div>
@@ -745,7 +758,8 @@ const BookingDetail = () => {
                                 key={image.Id}
                                 src={image.ImageUrl}
                                 thumbnail
-                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                style={{ width: '50px', height: '50px', objectFit: 'cover', cursor: 'pointer' }}
+                                onClick={() => handleImageClick(image)}
                               />
                             ))}
                           </div>
@@ -812,7 +826,8 @@ const BookingDetail = () => {
                                 key={image.Id}
                                 src={image.ImageUrl}
                                 thumbnail
-                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                                style={{ width: '50px', height: '50px', objectFit: 'cover', cursor: 'pointer' }}
+                                onClick={() => handleImageClick(image)}
                               />
                             ))}
                           </div>
@@ -835,6 +850,21 @@ const BookingDetail = () => {
           <h4 className="text-muted">No booking information found</h4>
         </div>
       )}
+
+      <Modal show={showImageModal} onHide={handleCloseImageModal} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Image Preview</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          {selectedImage && (
+            <Image
+              src={selectedImage.ImageUrl}
+              fluid
+              style={{ maxHeight: '80vh', objectFit: 'contain' }}
+            />
+          )}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };

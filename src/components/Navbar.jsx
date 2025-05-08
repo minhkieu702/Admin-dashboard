@@ -14,9 +14,9 @@ const Navbar = () => {
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState({ title: '', message: '' });
     const navigate = useNavigate();
-    const viewBookingDetails = (href) => {
-        navigate(href);
-    };
+    // const viewBookingDetails = (href) => {
+    //     navigate(href);
+    // };
     useEffect(() => {
         fetchNotification();
         
@@ -140,11 +140,7 @@ const Navbar = () => {
 
     const setNotificationsAreRead = async () => {
         try {
-            await axiosInstance.post("/api/Notification", null, {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
+            await axiosInstance.post("/api/Notification");
             await fetchCount();
         } catch (err) {
             console.error('Error marking notifications as read:', err);
